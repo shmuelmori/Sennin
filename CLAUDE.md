@@ -6,13 +6,12 @@ The spec is the source of truth: `docs/Sennin – POC Specification.md`. Read th
 
 Build progress is tracked in `docs/status.md`. Check it at the start of a session, and mark a step done (with date and branch) when it is merged.
 
-<!-- Maintainers: the Expo app is not scaffolded yet. Once it is, replace the Commands section with the real scripts from package.json, including the unit-test command. -->
-
 ## Commands
-- Dev server: `npx expo start`, then scan the QR code with Expo Go on the phone. Add `--tunnel` if the phone can't reach the PC over Wi-Fi.
-- Add a dependency: `npx expo install <pkg>`, not `npm install`, so versions match the Expo SDK.
-- Typecheck: `npx tsc --noEmit`
-- Lint: `npx expo lint`
+- Dev server: `npx expo start` (or `npm start`), then scan the QR code with Expo Go on the phone. Add `--tunnel` if the phone can't reach the PC over Wi-Fi.
+- Add a dependency: `npx expo install <pkg>` (add `--dev` for dev tools), not `npm install`, so versions match the Expo SDK.
+- Typecheck: `npx tsc --noEmit` (or `npm run typecheck`)
+- Lint: `npx expo lint .` (or `npm run lint`). Keep the `.`: without it, `expo lint` only checks `app/` and `components/`.
+- Unit tests: `npx jest` (or `npm test`). Test files sit next to the code as `lib/<name>.test.ts`.
 
 ## Hard constraints
 - Must run in Expo Go: no custom native code, no dev client, no libraries that Expo Go doesn't support. Answering "is Expo enough?" is one of the POC's goals.
@@ -60,7 +59,7 @@ theme/        colors and spacing from section 11
 
 **General:**
 - TypeScript strict mode, no `any`. Type the parts of the YouTube responses the app uses.
-- Named exports.
+- Named exports, except route and layout files in `app/`, which Expo Router requires to be default exports.
 - No new dependency without asking first.
 - Build for one phone (Galaxy S24 FE), not a store release. Choose the simplest working solution, and add no state-management library unless the spec needs one.
 

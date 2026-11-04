@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 0.1
+**Next step:** 0.1 phone check (code is on `chore/project-scaffold`), then 0.3
 
 ---
 
@@ -19,8 +19,9 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - [ ] **0.1 Scaffold the Expo app**
   Expo + TypeScript (strict) + Expo Router in the repo root. Create the folders `app/`, `components/`, `hooks/`, `lib/`, `services/`, `db/`, `theme/`.
   *Done when:* a placeholder screen opens in Expo Go on the Galaxy S24 FE.
-- [ ] **0.2 Lint and test tooling** (dep)
+- [x] **0.2 Lint and test tooling** (dep) (2026-11-05, chore/project-scaffold)
   Get `npx expo lint` working, and add a unit test runner for `lib/` (e.g. `jest-expo`).
+  *Result:* ESLint 9 with `eslint-config-expo` plus `no-explicit-any` as an error. Run it as `npx expo lint .`, because without the `.` it skips `lib/`, `hooks/`, `services/`, `db/` and `theme/`. Jest 30 with the `jest-expo/android` preset.
   *Done when:* `npx tsc --noEmit`, `npx expo lint` and one sample test all pass.
 - [ ] **0.3 API key setup**
   Add `.env.example` with `EXPO_PUBLIC_YOUTUBE_KEY=`. Confirm `.env` is git-ignored. Restrict the key to the YouTube Data API in Google Cloud (manual step for the user).
