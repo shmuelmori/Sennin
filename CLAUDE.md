@@ -4,7 +4,7 @@ Android POC (React Native + Expo, TypeScript). Tapping "Refresh" builds a feed o
 
 The spec is the source of truth: `docs/Sennin – POC Specification.md`. Read the relevant section before building a feature. If a request contradicts the spec, say so before writing code, and update the spec when a decision changes.
 
-Build progress is tracked in `status.md`. Check it at the start of a session, and mark a step done (with date and branch) when it is merged.
+Build progress is tracked in `docs/status.md`. Check it at the start of a session, and mark a step done (with date and branch) when it is merged.
 
 <!-- Maintainers: the Expo app is not scaffolded yet. Once it is, replace the Commands section with the real scripts from package.json, including the unit-test command. -->
 
