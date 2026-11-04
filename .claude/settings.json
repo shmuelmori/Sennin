@@ -1,0 +1,62 @@
+{
+  "permissions": {
+    "ask": [
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "PowerShell(git merge *)",
+      "PowerShell(git push *)",
+      "Bash(git branch -d:*)",
+      "Bash(git branch -D:*)",
+      "PowerShell(git branch -d *)",
+      "PowerShell(git branch -D *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/block-commit-on-main.py"
+            ],
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/skills/skill-generator/scripts/validate_skill.py",
+              "--hook"
+            ],
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/skills/skill-generator/scripts/validate_skill.py",
+              "--hook"
+            ],
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

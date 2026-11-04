@@ -1,0 +1,9 @@
+# Secrets (YouTube API key)
+.env
+.env.*
+
+# Python bytecode (Claude Code hook scripts)
+__pycache__/
+
+# Local state of the skill-generator validator hook
+.claude/.skill-generator-state.json
