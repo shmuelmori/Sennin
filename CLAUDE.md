@@ -4,6 +4,8 @@ Android POC (React Native + Expo, TypeScript). Tapping "Refresh" builds a feed o
 
 The spec is the source of truth: `docs/Sennin – POC Specification.md`. Read the relevant section before building a feature. If a request contradicts the spec, say so before writing code, and update the spec when a decision changes.
 
+Build progress is tracked in `status.md`. Check it at the start of a session, and mark a step done (with date and branch) when it is merged.
+
 <!-- Maintainers: the Expo app is not scaffolded yet. Once it is, replace the Commands section with the real scripts from package.json, including the unit-test command. -->
 
 ## Commands
@@ -29,7 +31,7 @@ The spec is the source of truth: `docs/Sennin – POC Specification.md`. Read th
 
 ## Code conventions
 
-**File size:** aim for under 150 lines per file, hard limit 250. If a file grows past that, split it before adding more.
+**File size:** aim for under 300 lines per file, hard limit 350. If a file grows past that, split it before adding more.
 
 **Smart vs. dumb components:**
 - Screens in `app/` (Expo Router) are the only "smart" components: they call hooks (which read the DB and the API) and pass data down.
