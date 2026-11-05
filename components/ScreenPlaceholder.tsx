@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, fontSize, spacing } from '@/theme';
@@ -5,10 +6,12 @@ import { colors, fontSize, spacing } from '@/theme';
 type Props = {
   title: string;
   lines: readonly string[];
+  /** Shown below the lines, e.g. a button. */
+  children?: ReactNode;
 };
 
 // Centered title and text for a screen that has no content yet.
-export function ScreenPlaceholder({ title, lines }: Props) {
+export function ScreenPlaceholder({ title, lines, children }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
@@ -17,6 +20,7 @@ export function ScreenPlaceholder({ title, lines }: Props) {
           {line}
         </Text>
       ))}
+      {children}
     </View>
   );
 }
