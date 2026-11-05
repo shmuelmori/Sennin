@@ -20,7 +20,7 @@ Questions the POC answers:
 | Area | In scope |
 | --- | --- |
 | Platform | Android, single device (Galaxy S24 FE), not distributed via the store |
-| Topics | 2 topics hard-coded: World War II, Quantum Computing, with keywords per topic |
+| Topics | 2 topics hard-coded: World War II, Claude Code, with keywords per topic |
 | Sources | Adding and removing YouTube channels from within the app |
 | Fetching | Manual only, via a "Refresh" button |
 | Filtering | Fixed rules (section 5) |
@@ -75,7 +75,7 @@ Questions the POC answers:
 | Vertical | Height greater than width |
 | Embeddable | status.embeddable = true |
 | Keyword | A topic keyword in the title or description (single-topic channels exempt) |
-| Blocked words | e.g. reaction, giveaway, #meme |
+| Blocked words | e.g. "reacts to", "reaction video", giveaway, #meme (not plain "reaction", which also blocks "chain reaction") |
 | Minimum views | 1,000 (does not apply to videos from the last 48 hours) |
 | Live stream | Rejected |
 
@@ -120,7 +120,8 @@ Quota: a fetch with 30 channels costs about 60 units out of 10,000 per day. sear
 
 - Maximum length: 3 minutes (180 seconds), the YouTube Shorts limit. Raised from 90 seconds on 2026-11-05, because real Shorts from the chosen channels run longer.
 - "Watched" after half a video.
-- 2 topics only.
+- 2 topics only: World War II and Claude Code. Claude Code replaced Quantum Computing on 2026-11-06.
+- Keywords and blocked words are listed in `lib/topics.ts` (agreed 2026-11-06). Matching ignores case and uses whole words. Hebrew words may take a prefix letter (ה, ב, ל, ו, מ, ש, כ). Blocked words use narrow phrases such as "reacts to" instead of plain "reaction", so titles like "chain reaction" or "Churchill's reaction" aren't blocked.
 - React Native with Expo.
 
 ## 10. Risks
