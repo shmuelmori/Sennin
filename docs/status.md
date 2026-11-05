@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 5.1
+**Next step:** 6.1
 
 ---
 
@@ -100,13 +100,16 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 5 – Sources screen (F1, F2, F3)
 
-- [ ] **5.1 Channel list** (§4)
+- [x] **5.1 Channel list** (§4) (2026-11-06, feature/sources-screen)
   A `useChannels` hook, plus a list showing each channel's thumbnail, name and topic tags.
-- [ ] **5.2 Add a channel** (F1)
+  *Result:* `hooks/useChannels.ts` reads the list and updates it at once on a remove or topic change, then saves. If saving fails, it reads the list again. Thumbnails load from YouTube's own image server, so only YouTube is contacted.
+- [x] **5.2 Add a channel** (F1) (2026-11-06, feature/sources-screen)
   Paste a link or @handle, resolve it through the API, save it. Show a clear error for invalid or unknown input. Remove the temporary API test button and `hooks/useYoutubeTest.ts` from step 4.1.
-- [ ] **5.3 Remove and assign topics** (F2, F3) (dep: swipe gesture library, if needed)
+  *Result:* works on the phone by @handle and by a pasted share link. Each add costs 1 unit (one `channels.list`) and logs a `[sources] added: <title> (<channelId>), 1 unit` line. Video links, unknown handles and channels already in the list each get their own message, from `lib/channelMessages.ts`. The API test button and `hooks/useYoutubeTest.ts` are removed.
+- [x] **5.3 Remove and assign topics** (F2, F3) (2026-11-06, feature/sources-screen)
   Swipe to remove. Assign each channel to one topic or both.
   *Done when:* adding, removing and assigning all work on the phone, and the data survives an app restart.
+  *Result:* all of it works on the phone, and the list and topics survived closing and reopening Expo Go. No gesture library was needed: `components/SwipeToRemove.tsx` uses `PanResponder`, with the math in `lib/swipe.ts`. On the right-to-left phone, swiping right uncovers Remove on the left, as intended. Turning off a channel's only topic does nothing (`toggleTopic` in `lib/topicSelection.ts`).
 
 ## Phase 6 – Fetch pipeline (F4, F5, F6)
 
