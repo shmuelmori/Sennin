@@ -1,6 +1,7 @@
 # Secrets (YouTube API key)
 .env
 .env.*
+!.env.example
 
 # Python bytecode (Claude Code hook scripts)
 __pycache__/
