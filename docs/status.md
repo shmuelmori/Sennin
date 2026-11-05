@@ -37,7 +37,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 
 The spec (§10) calls the player the highest risk: "test in the first week". This phase answers POC question 3 before any other feature is built.
 
-- [ ] **1.1 Paging feed with hard-coded Shorts** (§3, §4, F7)
+- [ ] **1.1 Paging feed with hard-coded Shorts** (§3, §4, F7) (dep)
   A vertical `FlatList` with `pagingEnabled` and ~15 hard-coded Short IDs, playing through `react-native-youtube-iframe`. Mount a player only for the current item and its neighbors.
   *Done when:* swiping up and down works on the phone, and the YouTube branding and controls are fully visible.
 - [ ] **1.2 Measure switch time** (§8)
