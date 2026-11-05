@@ -64,7 +64,7 @@ Questions the POC answers:
 
 1. For each channel: playlistItems.list on the uploads playlist, up to 50 items.
 2. Remove videos that were already watched or are already in the list.
-3. videos.list (contentDetails, statistics, status, player) in batches of 50.
+3. videos.list (snippet, contentDetails, statistics, status, player, liveStreamingDetails) in batches of 50. Extra parts cost no extra units. `snippet` gives the title, description, publish date and live state.
 4. Filter by the rules, logging the rejection reason for each video.
 5. Sort: videos new since the previous fetch first, then by view count.
 6. 15 videos for the feed plus up to 10 in reserve.
@@ -74,10 +74,12 @@ Questions the POC answers:
 | Length | Up to 3 minutes (180 seconds) |
 | Vertical | Height greater than width |
 | Embeddable | status.embeddable = true |
-| Keyword | A topic keyword in the title or description (single-topic channels exempt) |
+| Keyword | A topic keyword in the title or description (channels assigned to exactly one topic are exempt) |
 | Blocked words | e.g. "reacts to", "reaction video", giveaway, #meme (not plain "reaction", which also blocks "chain reaction") |
 | Minimum views | 1,000 (does not apply to videos from the last 48 hours) |
-| Live stream | Rejected |
+| Live stream | Rejected: `snippet.liveBroadcastContent` is live or upcoming, or `liveStreamingDetails` is present (streams that have ended) |
+
+The rules run in this order: live stream, length, vertical, embeddable, blocked words, keyword, minimum views. Each rejected video is logged with the first rule that rejects it, so the counts per rule add up to the number of rejected videos.
 
 Quota: a fetch with 30 channels costs about 60 units out of 10,000 per day. search.list is not used.
 
