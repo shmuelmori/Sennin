@@ -148,7 +148,7 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 - **Mood reference image (9.x):** spec §11 points to `assets/reference/mood.jpg`, which isn't in the repo yet.
 
 Decided on 2026-11-06:
-- **What `fetch_log.rejectedByRule` stores (3.1):** a JSON list with one `{videoId, rule, detail}` per rejected video, as text in the SQLite row (not a separate file). The Status screen (8.1) counts them per rule. Only the latest 20 logs are kept. Spec §7 is updated.
+- **What `fetch_log.rejectedByRule` stores (3.1):** a JSON list with one `{videoId, rule, detail}` per rejected video, as text in the SQLite row (not a separate file). The Status screen (8.1) counts them per rule. Logs older than 30 days are deleted when a new fetch is saved. Spec §7 is updated.
 - **Channel name in `feed_item` (3.1):** `feed_item.channelTitle` is saved with each video, so the overlay (7.1) still has the name after the channel is removed (F2). Spec §7 is updated.
 - **Live stream detection (2.4, 4.1):** `videos.list` also requests `snippet` and `liveStreamingDetails` (no extra units). Live, upcoming and ended streams are rejected. Spec §5 is updated.
 - **Keyword exemption (2.4):** a channel assigned to exactly one topic skips the keyword rule, as the spec says. With World War II and Claude Code as the topics, few channels will have both, so the keyword rule will rarely run.

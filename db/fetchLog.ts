@@ -4,8 +4,8 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { decodeRejections, encodeRejections, type FetchLog, type NewFetchLog } from '@/lib/records';
 
-/** Older logs are deleted, so the rejection lists don't pile up. */
-export const FETCH_LOG_KEEP = 20;
+/** Logs older than this are deleted, so the rejection lists don't pile up. */
+export const FETCH_LOG_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 type FetchLogRow = {
   id: number;
@@ -16,7 +16,10 @@ type FetchLogRow = {
   error: string | null;
 };
 
-/** Saves the log of one fetch and deletes all but the latest FETCH_LOG_KEEP. */
+/**
+ * Saves the log of one fetch, and deletes logs that started more than 30 days
+ * before it. The new log itself is always kept.
+ */
 export async function insertFetchLog(db: SQLiteDatabase, log: NewFetchLog): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.runAsync(
@@ -24,10 +27,9 @@ export async function insertFetchLog(db: SQLiteDatabase, log: NewFetchLog): Prom
        VALUES (?, ?, ?, ?, ?)`,
       [log.startedAtMs, log.fetched, encodeRejections(log.rejected), log.quotaUsed, log.error],
     );
-    await db.runAsync(
-      'DELETE FROM fetch_log WHERE id NOT IN (SELECT id FROM fetch_log ORDER BY id DESC LIMIT ?)',
-      [FETCH_LOG_KEEP],
-    );
+    await db.runAsync('DELETE FROM fetch_log WHERE startedAt < ?', [
+      log.startedAtMs - FETCH_LOG_MAX_AGE_MS,
+    ]);
   });
 }
 

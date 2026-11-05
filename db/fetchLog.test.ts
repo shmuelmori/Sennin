@@ -2,7 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { NewFetchLog } from '@/lib/records';
 
-import { FETCH_LOG_KEEP, getLatestFetchLog, insertFetchLog } from './fetchLog';
+import { FETCH_LOG_MAX_AGE_MS, getLatestFetchLog, insertFetchLog } from './fetchLog';
 import { initDatabase } from './schema';
 import { openTestDatabase } from './testDatabase';
 
@@ -46,17 +46,41 @@ describe('insertFetchLog and getLatestFetchLog', () => {
     expect(await getLatestFetchLog(db)).toMatchObject({ rejected: [], error: 'quotaExceeded' });
   });
 
-  it(`keeps only the latest ${FETCH_LOG_KEEP} logs`, async () => {
-    for (let i = 1; i <= FETCH_LOG_KEEP + 3; i++) {
-      await insertFetchLog(db, log(i));
+  describe('deleting old logs', () => {
+    const day = 24 * 60 * 60 * 1000;
+    const now = 1_800_000_000_000;
+
+    async function storedStartTimes(): Promise<number[]> {
+      const rows = await db.getAllAsync<{ startedAt: number }>(
+        'SELECT startedAt FROM fetch_log ORDER BY id',
+      );
+      return rows.map((row) => row.startedAt);
     }
-    const rows = await db.getAllAsync<{ startedAt: number }>(
-      'SELECT startedAt FROM fetch_log ORDER BY id',
-    );
-    expect(rows.map((row) => row.startedAt)).toEqual(
-      Array.from({ length: FETCH_LOG_KEEP }, (_, i) => i + 4),
-    );
-    expect((await getLatestFetchLog(db))?.startedAtMs).toBe(FETCH_LOG_KEEP + 3);
+
+    it('is set to 30 days', () => {
+      expect(FETCH_LOG_MAX_AGE_MS).toBe(30 * day);
+    });
+
+    it('deletes logs more than 30 days older than the new one', async () => {
+      await insertFetchLog(db, log(now - 45 * day));
+      await insertFetchLog(db, log(now - 31 * day));
+      await insertFetchLog(db, log(now - 29 * day));
+      await insertFetchLog(db, log(now));
+      expect(await storedStartTimes()).toEqual([now - 29 * day, now]);
+    });
+
+    it('keeps a log exactly 30 days old', async () => {
+      await insertFetchLog(db, log(now - 30 * day));
+      await insertFetchLog(db, log(now));
+      expect(await storedStartTimes()).toEqual([now - 30 * day, now]);
+    });
+
+    it('keeps every log from the last 30 days, however many', async () => {
+      for (let i = 0; i < 100; i++) {
+        await insertFetchLog(db, log(now - 29 * day + i * 60_000));
+      }
+      expect(await storedStartTimes()).toHaveLength(100);
+    });
   });
 
   it('throws if the stored rejections are unreadable', async () => {

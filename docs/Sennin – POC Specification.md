@@ -112,7 +112,7 @@ Quota: a fetch with 30 channels costs about 60 units out of 10,000 per day. sear
 
 - `feed_item.channelTitle` is saved with each video, so videos from a removed channel still show their channel name (F2). Added on 2026-11-06.
 - `feed_item.status` is `unseen`, `watched` or `skipped`.
-- `fetch_log.rejectedByRule` is a JSON list with one `{videoId, rule, detail}` per rejected video (F5). The Status screen counts them per rule. Only the latest 20 fetch logs are kept. Decided on 2026-11-06.
+- `fetch_log.rejectedByRule` is a JSON list with one `{videoId, rule, detail}` per rejected video (F5). The Status screen counts them per rule. Fetch logs older than 30 days are deleted when a new fetch is saved. Decided on 2026-11-06.
 - Times are stored as milliseconds since 1970, and true/false as 1/0.
 
 ## 8. Non-functional requirements
