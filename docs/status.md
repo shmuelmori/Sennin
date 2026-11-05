@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 4.1
+**Next step:** 5.1
 
 ---
 
@@ -87,16 +87,23 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 4 – YouTube client in `services/youtube.ts`
 
-- [ ] **4.1 Typed API client with a quota counter**
+- [x] **4.1 Typed API client with a quota counter** (2026-11-06, feature/youtube-client)
   `channels.list` (`forHandle=` or `id=`), `playlistItems.list` (up to 50), `videos.list` (batches of 50, with `maxHeight` so `player.embedWidth` and `embedHeight` are returned). Count units for every call. Handle errors: bad key, quota exceeded, network.
   *Done when:* resolving one real channel and fetching its videos works on the phone, and the unit count is correct.
+  *Result:* works on the phone: `@3blue1brown` resolved, its latest 50 uploads all came back with details, 30 passed the filters and 20 were rejected by length. It took 4 units (2 `channels.list`, 1 `playlistItems.list`, 1 `videos.list`) in 1.5 s. Shorts detection looks clean on this channel: every Short reported 608x1080 and every long video 1920x1080.
+  - `createYoutubeClient()` in `services/youtube.ts` returns `resolveChannel`, `listUploads`, `getVideos` and `unitsUsed()`. 6.1 creates one client per fetch and writes its `unitsUsed()` to `fetch_log`. A request counts its units once a response arrives, failed ones included. A request with no response (offline, or the 15 s timeout) counts 0.
+  - Calls return `{ ok: true, value }` or `{ ok: false, error }` instead of throwing. `lib/youtubeErrors.ts` sorts errors into `noKey`, `badKey`, `keyRestricted`, `quotaExceeded`, `notFound`, `network` and `other`, and `describeYoutubeError` gives the text for 5.2 and 6.2. A bad key is reported as `API_KEY_INVALID` in the ErrorInfo details, not in the old `errors[].reason`.
+  - An unknown handle returns HTTP 200 with no `items`, which the client reports as `notFound`.
+  - `player.embedWidth`, `embedHeight` and `statistics.viewCount` arrive as strings. `toCount` in `lib/youtubeResponses.ts` reads them.
+  - `getVideos` returns `FetchedVideo` (a `VideoCandidate` plus `channelTitle`). YouTube leaves private and deleted videos out, so 6.1 can compare the result with the IDs it sent.
+  - The "Test YouTube API" button on the Status screen (`hooks/useYoutubeTest.ts`) is temporary. Remove it in 5.2.
 
 ## Phase 5 – Sources screen (F1, F2, F3)
 
 - [ ] **5.1 Channel list** (§4)
   A `useChannels` hook, plus a list showing each channel's thumbnail, name and topic tags.
 - [ ] **5.2 Add a channel** (F1)
-  Paste a link or @handle, resolve it through the API, save it. Show a clear error for invalid or unknown input.
+  Paste a link or @handle, resolve it through the API, save it. Show a clear error for invalid or unknown input. Remove the temporary API test button and `hooks/useYoutubeTest.ts` from step 4.1.
 - [ ] **5.3 Remove and assign topics** (F2, F3) (dep: swipe gesture library, if needed)
   Swipe to remove. Assign each channel to one topic or both.
   *Done when:* adding, removing and assigning all work on the phone, and the data survives an app restart.
