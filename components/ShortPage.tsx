@@ -24,11 +24,24 @@ const FILL_WEBVIEW_CSS =
   '.container{height:100%!important;padding-bottom:0!important}' +
   '#player{position:absolute;top:0;left:0;width:100%!important;height:100%!important}';
 
+const FILL_WEBVIEW_JS =
+  "(function(){var s=document.createElement('style');" +
+  `s.textContent='${FILL_WEBVIEW_CSS}';` +
+  'document.head.appendChild(s);})();';
+
+// On Android, react-native-webview delivers the app's commands (play, pause)
+// as a 'message' event on `document`, but the library's page listens on
+// `window`, so the commands never arrive. Forward them to `window`. It runs
+// both before and after the page loads, in case the early run is too soon;
+// the flag keeps it from forwarding twice.
+const FORWARD_MESSAGES_JS =
+  'if(!window.__senninForward){window.__senninForward=true;' +
+  "document.addEventListener('message',function(e){" +
+  "window.dispatchEvent(new MessageEvent('message',{data:e.data}));});}";
+
 const WEB_VIEW_PROPS: WebViewProps = {
-  injectedJavaScript:
-    "(function(){var s=document.createElement('style');" +
-    `s.textContent='${FILL_WEBVIEW_CSS}';` +
-    'document.head.appendChild(s);})();true;',
+  injectedJavaScriptBeforeContentLoaded: `${FORWARD_MESSAGES_JS}true;`,
+  injectedJavaScript: `${FORWARD_MESSAGES_JS}${FILL_WEBVIEW_JS}true;`,
 };
 
 type Props = {
