@@ -71,7 +71,7 @@ Questions the POC answers:
 
 | Rule | Value |
 | --- | --- |
-| Length | Up to 90 seconds |
+| Length | Up to 3 minutes (180 seconds) |
 | Vertical | Height greater than width |
 | Embeddable | status.embeddable = true |
 | Keyword | A topic keyword in the title or description (single-topic channels exempt) |
@@ -118,7 +118,7 @@ Quota: a fetch with 30 channels costs about 60 units out of 10,000 per day. sear
 
 ## 9. Decisions
 
-- Maximum length: 90 seconds.
+- Maximum length: 3 minutes (180 seconds), the YouTube Shorts limit. Raised from 90 seconds on 2026-11-05, because real Shorts from the chosen channels run longer.
 - "Watched" after half a video.
 - 2 topics only.
 - React Native with Expo.

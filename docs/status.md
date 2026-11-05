@@ -53,7 +53,7 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 - [ ] **2.3 Topic and word constants** (§2, §5)
   The 2 topics with their keywords, plus the blocked-words list.
 - [ ] **2.4 Filter rules** (§5, F5)
-  One function per rule, each returning pass or a rejection reason: length ≤ 90 s, vertical (height > width), embeddable, keyword (single-topic channels exempt), blocked words, minimum 1,000 views (skipped for videos from the last 48 h), live stream. Plus a runner that applies all rules and collects the rejections.
+  One function per rule, each returning pass or a rejection reason: length ≤ 180 s, vertical (height > width), embeddable, keyword (single-topic channels exempt), blocked words, minimum 1,000 views (skipped for videos from the last 48 h), live stream. Plus a runner that applies all rules and collects the rejections.
 - [ ] **2.5 Dedupe, sort and select** (§5 steps 2, 5, 6)
   Remove watched videos and videos already in the list. Sort new-since-last-fetch first, then by views. Return 15 feed videos plus up to 10 in reserve, and fill with older unwatched videos if there aren't enough new ones (§10).
 

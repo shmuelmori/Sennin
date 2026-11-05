@@ -23,7 +23,7 @@ Build progress is tracked in `docs/status.md`. Check it at the start of a sessio
 - Never call `search.list` (100 units per call). A full fetch must stay under 100 units.
 - Resolve an `@handle` with `channels.list` and `forHandle=`. Get the uploads playlist from `contentDetails.relatedPlaylists.uploads`.
 - Batch `videos.list` at 50 IDs per request.
-- The API has no "is a Short" field. Detect Shorts by duration ≤ 90 s and height > width.
+- The API has no "is a Short" field. Detect Shorts by duration ≤ 180 s (3 minutes, the YouTube Shorts limit) and height > width.
 - `player.embedWidth` and `player.embedHeight` are returned only when the request passes `maxWidth` or `maxHeight`.
 - `contentDetails.duration` is ISO 8601 (e.g. `PT1M5S`). Parse it; don't string-match it.
 - For every fetch, log each rejected video with the rule that rejected it, plus the quota used, in `fetch_log`.
