@@ -53,8 +53,11 @@ Questions the POC answers:
 
 **Sources**
 
-- Channel list with thumbnail, name and assigned topic.
-- Add by link or @handle, remove by swiping, assign to a topic.
+- Channel list with thumbnail, name and topic tags.
+- Add by link or @handle, picking one or both topics in the add form. The Add button stays disabled until a topic is picked.
+- Remove by swiping a row sideways, which uncovers a "Remove" button. Tapping it removes the channel.
+- Tap a topic tag on a row to assign or unassign that topic. A channel always keeps at least one topic (F3).
+- Add, remove and topic behavior decided on 2026-11-06.
 
 **Status**
 

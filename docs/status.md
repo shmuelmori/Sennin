@@ -155,6 +155,8 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 - **Mood reference image (9.x):** spec §11 points to `assets/reference/mood.jpg`, which isn't in the repo yet.
 
 Decided on 2026-11-06:
+- **Swipe to remove (5.3):** built on React Native's own `PanResponder` and `Animated`, so no gesture library is added. Swiping a row uncovers a Sunset "Remove" button, and tapping it removes the channel, so a stray swipe can't remove one. Spec §4 is updated.
+- **Topics when adding (5.2):** picked with two topic tags in the add form. Add stays disabled until at least one is picked, and the picked topics stay for the next channel. On a saved channel, tapping a tag toggles that topic, but the last topic can't be removed (F3). Spec §4 is updated.
 - **What `fetch_log.rejectedByRule` stores (3.1):** a JSON list with one `{videoId, rule, detail}` per rejected video, as text in the SQLite row (not a separate file). The Status screen (8.1) counts them per rule. Logs older than 30 days are deleted when a new fetch is saved. Spec §7 is updated.
 - **Channel name in `feed_item` (3.1):** `feed_item.channelTitle` is saved with each video, so the overlay (7.1) still has the name after the channel is removed (F2). Spec §7 is updated.
 - **Live stream detection (2.4, 4.1):** `videos.list` also requests `snippet` and `liveStreamingDetails` (no extra units). Live, upcoming and ended streams are rejected. Spec §5 is updated.
