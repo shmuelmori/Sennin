@@ -1,6 +1,7 @@
 import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { DatabaseProvider } from '@/db/DatabaseProvider';
 import { colors } from '@/theme';
 import { navigationTheme } from '@/theme/navigationTheme';
 
@@ -10,13 +11,15 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={navigationTheme}>
       <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          animation: 'fade',
-          headerTintColor: colors.silver,
-          headerShadowVisible: false,
-        }}
-      />
+      <DatabaseProvider>
+        <Stack
+          screenOptions={{
+            animation: 'fade',
+            headerTintColor: colors.silver,
+            headerShadowVisible: false,
+          }}
+        />
+      </DatabaseProvider>
     </ThemeProvider>
   );
 }
