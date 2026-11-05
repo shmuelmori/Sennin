@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 2.1
+**Next step:** 3.1
 
 ---
 
@@ -59,16 +59,21 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 2 – Pure logic in `lib/` (each with unit tests)
 
-- [ ] **2.1 ISO 8601 duration parser**
+- [x] **2.1 ISO 8601 duration parser** (2026-11-06, feature/pure-logic)
   `PT1M5S` → 65. Handles hours, missing parts and bad input.
-- [ ] **2.2 Channel input parser** (F1)
+  *Result:* `parseDurationSec` in `lib/duration.ts` returns `null` for bad input. Live and upcoming streams report `P0D`, which parses to 0. Weeks and days are supported. Years and months are rejected because their length in seconds is ambiguous.
+- [x] **2.2 Channel input parser** (F1) (2026-11-06, feature/pure-logic)
   Accepts `@handle`, `youtube.com/@handle`, `youtube.com/channel/UC…`, and mobile links. Returns a handle, a channelId or an "invalid" reason.
-- [ ] **2.3 Topic and word constants** (§2, §5)
+  *Result:* `parseChannelInput` in `lib/channelInput.ts` also handles the `?si=…` on share links, channel tabs (`/@handle/shorts`) and percent-encoded Hebrew handles. Video links and old `/c/` and `/user/` links get their own reasons, so 5.2 can show a helpful error. A bare name without "@" is rejected. Links are parsed by hand, because React Native's `URL` doesn't fully support `hostname` and `pathname`.
+- [x] **2.3 Topic and word constants** (§2, §5) (2026-11-06, feature/pure-logic)
   The 2 topics with their keywords, plus the blocked-words list.
-- [ ] **2.4 Filter rules** (§5, F5)
+  *Result:* the second topic is now Claude Code instead of Quantum Computing. The lists are in `lib/topics.ts` (English and Hebrew keywords). Blocked words use narrow phrases ("reacts to", "reaction video") instead of plain "reaction".
+- [x] **2.4 Filter rules** (§5, F5) (2026-11-06, feature/pure-logic)
   One function per rule, each returning pass or a rejection reason: length ≤ 180 s, vertical (height > width), embeddable, keyword (single-topic channels exempt), blocked words, minimum 1,000 views (skipped for videos from the last 48 h), live stream. Plus a runner that applies all rules and collects the rejections.
-- [ ] **2.5 Dedupe, sort and select** (§5 steps 2, 5, 6)
+  *Result:* `lib/filterRules.ts` has one `check…` function per rule, each returning `null` or `{rule, detail}`. `applyFilters` logs each video under the first rule that rejects it, in the order given in spec §5. Matching lives in `lib/textMatch.ts`: whole words, any case, and Hebrew words may follow up to 3 prefix letters. The matcher uses Unicode regexes (`\p{L}`). Compiling them with `hermesc` from `node_modules` showed that Hermes accepts them. The input type `VideoCandidate` is what step 4.1 must map `videos.list` responses to.
+- [x] **2.5 Dedupe, sort and select** (§5 steps 2, 5, 6) (2026-11-06, feature/pure-logic)
   Remove watched videos and videos already in the list. Sort new-since-last-fetch first, then by views. Return 15 feed videos plus up to 10 in reserve, and fill with older unwatched videos if there aren't enough new ones (§10).
+  *Result:* `lib/feedSelection.ts` has `removeSeen`, `sortForFeed` and `selectFeed`. Older unwatched videos aren't a separate step: the sort places them after the new ones. Because videos already in the list are removed, a Refresh always brings different videos. Unwatched videos from the old list can come back in the fetch after that.
 
 ## Phase 3 – Storage in `db/`
 
