@@ -1,36 +1,35 @@
-import { Stack } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 
-import { readApiKey } from '@/services/youtube';
+import { HeaderButton } from '@/components/HeaderButton';
+import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { spacing } from '@/theme';
 
-// Placeholder for step 0.1. Step 0.4 replaces it with the themed Feed screen.
-export default function PlaceholderScreen() {
-  const apiKey = readApiKey();
-  const keyStatus = apiKey.ok
-    ? `YouTube API key loaded (…${apiKey.key.slice(-4)})`
-    : apiKey.reason === 'missing'
-      ? 'YouTube API key missing: add it to .env'
-      : "YouTube API key in .env doesn't look valid";
+// Feed screen (spec §4). Empty until step 1.1 adds the paging player.
+export default function FeedScreen() {
+  const router = useRouter();
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Sennin' }} />
-      <Text style={styles.title}>Sennin</Text>
-      <Text>Scaffold is running in Expo Go.</Text>
-      <Text>{keyStatus}</Text>
-    </View>
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Sennin',
+          headerRight: () => (
+            <View style={styles.headerButtons}>
+              <HeaderButton label="Sources" onPress={() => router.push('/sources')} />
+              <HeaderButton label="Status" onPress={() => router.push('/status')} />
+            </View>
+          ),
+        }}
+      />
+      <ScreenPlaceholder title="Feed" lines={['No videos yet.']} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+  headerButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
 });

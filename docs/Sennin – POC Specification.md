@@ -42,6 +42,8 @@ Questions the POC answers:
 
 ## 4. Screens
 
+**Navigation:** a stack with Feed as the home screen. Sources and Status open from buttons in the Feed's header, and Back returns to the Feed. No tab bar, so the feed keeps the full screen height.
+
 **Feed**
 
 - Full-screen video, channel name and title at the bottom, a "4 of 15" counter.
