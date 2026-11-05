@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 1.1
+**Next step:** 1.2
 
 ---
 
@@ -37,9 +37,16 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 
 The spec (§10) calls the player the highest risk: "test in the first week". This phase answers POC question 3 before any other feature is built.
 
-- [ ] **1.1 Paging feed with hard-coded Shorts** (§3, §4, F7) (dep)
+- [x] **1.1 Paging feed with hard-coded Shorts** (§3, §4, F7) (dep) (2026-11-05, feature/player-spike)
   A vertical `FlatList` with `pagingEnabled` and ~15 hard-coded Short IDs, playing through `react-native-youtube-iframe`. Mount a player only for the current item and its neighbors.
   *Done when:* swiping up and down works on the phone, and the YouTube branding and controls are fully visible.
+  *Result:* works on the phone: one video per swipe, the current video starts on its own, the previous one pauses, and YouTube's title, logo and controls are fully visible. `react-native-youtube-iframe` 2.4.1 needed four fixes, all in `components/ShortPage.tsx`:
+  - By default it loads its player page from `lonelycpp.github.io`. `useLocalHTML` builds the page in the app, so only YouTube is contacted. `baseUrlOverride` (`https://sennin.local/`, never requested) gives the page an origin so YouTube gets a Referer. No "Error 153" so far.
+  - Its page is a 16:9 box. Injected CSS stretches the player to fill the 9:16 WebView.
+  - On Android, `react-native-webview` delivers `postMessage` on `document`, but the local page listens on `window`, so play and pause silently did nothing. An injected script forwards the messages to `window`. `forceAndroidAutoplay` (desktop user agent) is not needed.
+  - Its types use `React.VFC`, which React 19's types dropped, so the player was typed as `any`. It's recast to its own props.
+
+  The 15 Shorts in `lib/spikeShorts.ts` come from 3Blue1Brown, Epic History and Gotham Games (Gotham Games had only 1 Short in its last 25 uploads). The Shorts length limit was raised from 90 s to 3 minutes in the spec (§5, §9).
 - [ ] **1.2 Measure switch time** (§8)
   Log the time from swipe end to playback start. Run about 30 switches on the phone.
   *Done when:* the results are recorded under "POC results" below. If fewer than 80% are under 1 s, try fixes (neighbor preloading, a lighter WebView setup) before going on.
