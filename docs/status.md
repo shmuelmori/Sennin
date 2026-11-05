@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 1.2
+**Next step:** 2.1
 
 ---
 
@@ -47,9 +47,15 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
   - Its types use `React.VFC`, which React 19's types dropped, so the player was typed as `any`. It's recast to its own props.
 
   The 15 Shorts in `lib/spikeShorts.ts` come from 3Blue1Brown, Epic History and Gotham Games (Gotham Games had only 1 Short in its last 25 uploads). The Shorts length limit was raised from 90 s to 3 minutes in the spec (§5, §9).
-- [ ] **1.2 Measure switch time** (§8)
+- [x] **1.2 Measure switch time** (§8) (2026-11-05, feature/switch-timing)
   Log the time from swipe end to playback start. Run about 30 switches on the phone.
   *Done when:* the results are recorded under "POC results" below. If fewer than 80% are under 1 s, try fixes (neighbor preloading, a lighter WebView setup) before going on.
+  *Result:* target not met: 1 of 12 switches under 1 s (8%), median 1.13 s, slowest 3.2 s (one outlier; the rest were 1.0–1.7 s). `hooks/useSwitchTimer.ts` measures from finger lift to the player's "playing" event and logs `[switch]` lines to the Expo terminal. Each switch splits into:
+  - the page snap animation, a steady ~0.26 s;
+  - the new video starting, ~0.75–0.9 s. Neighbors are only cued (page loaded, no video fetched), so playback still has to buffer;
+  - going back to a video that already played took 0.55 s in total, because it was already buffered.
+
+  The user ran 12 switches instead of 30, found the switching good in use, and chose to record the result and move on without fixes. Ideas for 7.5 and 7.6: start playing when the finger lifts instead of after the snap (saves ~0.25 s, which would have put about 2 of 3 switches under 1 s). Warming up neighbors by playing them muted off screen would cut more, but check YouTube's policies first, since hidden playback may count as views.
 
 ## Phase 2 – Pure logic in `lib/` (each with unit tests)
 
@@ -144,7 +150,7 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 | Measure | Target | Result |
 | --- | --- | --- |
-| Video switch time | < 1 s in 80% of switches | |
+| Video switch time | < 1 s in 80% of switches | Step 1.2: 8% under 1 s (1 of 12), median 1.13 s. Not met, but the user found it good in use. |
 | App open with an existing list | < 2 s | |
 | Fetch duration | < 60 s | |
 | Fetch quota | < 100 units | |
