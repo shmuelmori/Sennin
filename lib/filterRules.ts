@@ -32,14 +32,18 @@ export type VideoCandidate = {
   hasLiveStreamingDetails: boolean;
 };
 
-export type RuleName =
-  | 'live'
-  | 'length'
-  | 'vertical'
-  | 'embeddable'
-  | 'blockedWord'
-  | 'keyword'
-  | 'minViews';
+/** Every rule, in the order checkVideo runs them (spec §5). */
+export const RULE_NAMES = [
+  'live',
+  'length',
+  'vertical',
+  'embeddable',
+  'blockedWord',
+  'keyword',
+  'minViews',
+] as const;
+
+export type RuleName = (typeof RULE_NAMES)[number];
 
 export type Rejection = { rule: RuleName; detail: string };
 

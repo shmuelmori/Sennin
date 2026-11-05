@@ -1,0 +1,60 @@
+import type { RejectedVideo } from './filterRules';
+import { decodeRejections, encodeRejections, isFeedStatus } from './records';
+
+const rejected: RejectedVideo[] = [
+  { videoId: 'abc', rule: 'length', detail: '240 s' },
+  { videoId: 'def', rule: 'keyword', detail: 'no topic keyword' },
+  { videoId: 'ghi', rule: 'blockedWord', detail: 'מם "reacts to"' },
+];
+
+describe('encodeRejections and decodeRejections', () => {
+  it('round-trips a list, including Hebrew and quotes', () => {
+    expect(decodeRejections(encodeRejections(rejected))).toEqual(rejected);
+  });
+
+  it('round-trips an empty list', () => {
+    expect(encodeRejections([])).toBe('[]');
+    expect(decodeRejections('[]')).toEqual([]);
+  });
+
+  it('stores only videoId, rule and detail', () => {
+    const extra = [{ ...rejected[0], title: 'not stored' }];
+    expect(JSON.parse(encodeRejections(extra))).toEqual([rejected[0]]);
+  });
+
+  it('rejects text that is not JSON', () => {
+    expect(decodeRejections('')).toBeNull();
+    expect(decodeRejections('length: abc')).toBeNull();
+  });
+
+  it('rejects JSON that is not a list', () => {
+    expect(decodeRejections('{}')).toBeNull();
+    expect(decodeRejections('null')).toBeNull();
+    expect(decodeRejections('"abc"')).toBeNull();
+  });
+
+  it('rejects a list with a bad entry', () => {
+    expect(decodeRejections('[null]')).toBeNull();
+    expect(decodeRejections('[{"videoId":"a","rule":"length"}]')).toBeNull();
+    expect(decodeRejections('[{"videoId":1,"rule":"length","detail":""}]')).toBeNull();
+    expect(decodeRejections('[{"videoId":"a","rule":"tooLong","detail":""}]')).toBeNull();
+  });
+
+  it('drops extra fields when reading', () => {
+    expect(decodeRejections('[{"videoId":"a","rule":"live","detail":"x","more":1}]')).toEqual([
+      { videoId: 'a', rule: 'live', detail: 'x' },
+    ]);
+  });
+});
+
+describe('isFeedStatus', () => {
+  it('accepts the three statuses', () => {
+    expect(['unseen', 'watched', 'skipped'].every(isFeedStatus)).toBe(true);
+  });
+
+  it('rejects anything else', () => {
+    expect(isFeedStatus('')).toBe(false);
+    expect(isFeedStatus('Watched')).toBe(false);
+    expect(isFeedStatus('done')).toBe(false);
+  });
+});
