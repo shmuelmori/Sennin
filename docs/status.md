@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 0.3
+**Next step:** 1.1
 
 ---
 
@@ -24,12 +24,14 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
   Get `npx expo lint` working, and add a unit test runner for `lib/` (e.g. `jest-expo`).
   *Result:* ESLint 9 with `eslint-config-expo` plus `no-explicit-any` as an error. Run it as `npx expo lint .`, because without the `.` it skips `lib/`, `hooks/`, `services/`, `db/` and `theme/`. Jest 30 with the `jest-expo/android` preset.
   *Done when:* `npx tsc --noEmit`, `npx expo lint` and one sample test all pass.
-- [ ] **0.3 API key setup**
+- [x] **0.3 API key setup** (2026-11-05, chore/api-key-setup)
   Add `.env.example` with `EXPO_PUBLIC_YOUTUBE_KEY=`. Confirm `.env` is git-ignored. Restrict the key to the YouTube Data API in Google Cloud (manual step for the user).
   *Done when:* the app can read the key at runtime and `.env` doesn't show up in `git status`.
-- [ ] **0.4 Theme and navigation skeleton** (§4, §11)
+  *Result:* `.gitignore` needed `!.env.example`, because `.env.*` also matched the example file. `readApiKey()` in `services/youtube.ts` reads the key, and `checkApiKey()` in `lib/apiKey.ts` reports it as missing or malformed (not the 39-character `AIza…` format). The Status screen shows the result and the key's last 4 characters. A test `videos.list` call returned HTTP 200. Leave the key's Application restrictions at None: requests from Expo Go don't carry an Android app ID, so an "Android apps" restriction would block them. Restart with `npx expo start --clear` after editing `.env`.
+- [x] **0.4 Theme and navigation skeleton** (§4, §11) (2026-11-05, chore/api-key-setup)
   Put the palette and spacing in `theme/`. Add three empty screens (Feed, Sources, Status) with navigation between them.
   *Done when:* all three screens open on the phone in the §11 colors, with no hex literals outside `theme/`.
+  *Result:* `theme/index.ts` has the palette, spacing, radius and font sizes. `theme/navigationTheme.ts` colors the header and backgrounds. Navigation is a stack (now in spec §4): Feed is home, and Sources and Status open from Teal Mist header buttons with fade transitions. `app.json` still has template hex colors for the adaptive icon and splash screen. Replace them in 9.2.
 
 ## Phase 1 – Player spike (do the riskiest part first)
 
