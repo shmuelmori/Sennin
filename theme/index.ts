@@ -12,6 +12,8 @@ export const colors = {
   cherryBlossom: '#F3C6C8',
   /** Body text and titles. Only on deepSeaNight. */
   silver: '#DCDFDE',
+  /** Silver at 65% opacity: placeholders and hints. Only on deepSeaNight. */
+  silverMuted: '#DCDFDEA6',
 } as const;
 
 export const spacing = {
