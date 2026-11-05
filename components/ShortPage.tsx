@@ -1,7 +1,7 @@
 import { type ComponentType, memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { WebViewProps } from 'react-native-webview';
-import YoutubeIframe, { type YoutubeIframeProps } from 'react-native-youtube-iframe';
+import YoutubeIframe, { PLAYER_STATES, type YoutubeIframeProps } from 'react-native-youtube-iframe';
 
 import type { Size } from '@/lib/feedPaging';
 import { colors } from '@/theme';
@@ -53,6 +53,8 @@ type Props = {
   /** Play the video. True only for the current video. */
   playing: boolean;
   onPlayerError: (videoId: string, error: string) => void;
+  /** Called each time the video starts or resumes playing. */
+  onPlaying: (videoId: string) => void;
 };
 
 // One full-screen page of the feed. Off-window pages render an empty page,
@@ -64,6 +66,7 @@ export const ShortPage = memo(function ShortPage({
   mountPlayer,
   playing,
   onPlayerError,
+  onPlaying,
 }: Props) {
   return (
     <View style={[styles.page, pageSize]}>
@@ -77,6 +80,9 @@ export const ShortPage = memo(function ShortPage({
           baseUrlOverride={PLAYER_BASE_URL}
           webViewProps={WEB_VIEW_PROPS}
           onError={(error) => onPlayerError(videoId, error)}
+          onChangeState={(state) => {
+            if (state === PLAYER_STATES.PLAYING) onPlaying(videoId);
+          }}
         />
       ) : null}
     </View>

@@ -11,6 +11,7 @@ import {
 
 import { HeaderButton } from '@/components/HeaderButton';
 import { ShortPage } from '@/components/ShortPage';
+import { useSwitchTimer } from '@/hooks/useSwitchTimer';
 import {
   fitAspect,
   pageIndexFromOffset,
@@ -31,6 +32,7 @@ export default function FeedScreen() {
   const router = useRouter();
   const [pageSize, setPageSize] = useState<Size | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const switchTimer = useSwitchTimer();
 
   const playerSize = useMemo(
     () => (pageSize ? fitAspect(pageSize, SHORT_ASPECT) : null),
@@ -48,7 +50,10 @@ export default function FeedScreen() {
   const onMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (!pageSize) return;
     const offsetY = event.nativeEvent.contentOffset.y;
-    setCurrentIndex(pageIndexFromOffset(offsetY, pageSize.height, SPIKE_SHORTS.length));
+    const index = pageIndexFromOffset(offsetY, pageSize.height, SPIKE_SHORTS.length);
+    if (index === currentIndex) return;
+    switchTimer.onSwitch(SPIKE_SHORTS[index].videoId);
+    setCurrentIndex(index);
   };
 
   const renderItem = ({ item, index }: { item: SpikeShort; index: number }) =>
@@ -60,6 +65,7 @@ export default function FeedScreen() {
         mountPlayer={shouldMountPlayer(index, currentIndex)}
         playing={index === currentIndex}
         onPlayerError={logPlayerError}
+        onPlaying={switchTimer.onPlaying}
       />
     ) : null;
 
@@ -89,6 +95,7 @@ export default function FeedScreen() {
               index,
             })}
             pagingEnabled
+            onScrollEndDrag={switchTimer.onDragEnd}
             onMomentumScrollEnd={onMomentumScrollEnd}
             showsVerticalScrollIndicator={false}
             initialNumToRender={2}
