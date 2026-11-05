@@ -10,15 +10,16 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 0.1 phone check (code is on `chore/project-scaffold`), then 0.3
+**Next step:** 0.3
 
 ---
 
 ## Phase 0 – Project setup
 
-- [ ] **0.1 Scaffold the Expo app**
+- [x] **0.1 Scaffold the Expo app** (2026-11-05, chore/project-scaffold)
   Expo + TypeScript (strict) + Expo Router in the repo root. Create the folders `app/`, `components/`, `hooks/`, `lib/`, `services/`, `db/`, `theme/`.
   *Done when:* a placeholder screen opens in Expo Go on the Galaxy S24 FE.
+  *Result:* opens on the phone with Expo SDK 58. The phone runs the app right-to-left (Hebrew system language): the header title sits on the right. Keep this in mind for the overlays (7.1) and the Hebrew check (9.3).
 - [x] **0.2 Lint and test tooling** (dep) (2026-11-05, chore/project-scaffold)
   Get `npx expo lint` working, and add a unit test runner for `lib/` (e.g. `jest-expo`).
   *Result:* ESLint 9 with `eslint-config-expo` plus `no-explicit-any` as an error. Run it as `npx expo lint .`, because without the `.` it skips `lib/`, `hooks/`, `services/`, `db/` and `theme/`. Jest 30 with the `jest-expo/android` preset.
