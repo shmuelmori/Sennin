@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 3.1
+**Next step:** 4.1
 
 ---
 
@@ -77,11 +77,11 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 3 – Storage in `db/`
 
-- [ ] **3.1 Schema and seed** (§7) (dep)
+- [x] **3.1 Schema and seed** (§7) (dep) (2026-11-06, feature/storage)
   Create all six tables on first launch and seed the 2 topics.
   *Done when:* the app starts on the phone and the tables exist.
-  *Result:* `expo-sqlite` 58.0.15. `db/schema.ts` creates the tables and tracks the schema version in `PRAGMA user_version`, so a later change adds a migration step. The topics are rewritten from `lib/topics.ts` on every launch, so the table always matches the code. `DatabaseProvider` (in `app/_layout.tsx`) opens `sennin.db` before the app renders and logs a `[db] ready: …` line to the Expo terminal. Transactions use `withTransactionAsync`: `withExclusiveTransactionAsync` opens a new connection for each transaction, and foreign keys are off on that connection.
-- [ ] **3.2 Queries**
+  *Result:* `expo-sqlite` 58.0.15. On the phone, the `[db] ready` line showed all six tables and 2 topics, and the feed still played (median switch 1.11 s, close to step 1.2). `db/schema.ts` creates the tables and tracks the schema version in `PRAGMA user_version`, so a later change adds a migration step. The topics are rewritten from `lib/topics.ts` on every launch, so the table always matches the code. `DatabaseProvider` (in `app/_layout.tsx`) opens `sennin.db` before the app renders and logs a `[db] ready: …` line to the Expo terminal. Transactions use `withTransactionAsync`: `withExclusiveTransactionAsync` opens a new connection for each transaction, and foreign keys are off on that connection.
+- [x] **3.2 Queries** (2026-11-06, feature/storage)
   Channels (add, remove, list, set topics), feed items (replace the list, read, update status), watched (insert, check), fetch log (insert, read latest). Removing a channel must not delete its feed items (F2).
   *Result:* one file per table group in `db/` (`channels.ts`, `feed.ts`, `watched.ts`, `fetchLog.ts`). The row types and the `rejectedByRule` JSON format are in `lib/records.ts`. Hooks get the database with `useDatabase()` from `db/DatabaseProvider.tsx`. The `db/` tests run the real SQL on Node's built-in SQLite through `db/testDatabase.ts`, because expo-sqlite's native module doesn't run in Jest.
 
