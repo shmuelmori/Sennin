@@ -77,11 +77,13 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 3 – Storage in `db/`
 
-- [ ] **3.1 Schema and seed** (§7)
+- [ ] **3.1 Schema and seed** (§7) (dep)
   Create all six tables on first launch and seed the 2 topics.
   *Done when:* the app starts on the phone and the tables exist.
+  *Result:* `expo-sqlite` 58.0.15. `db/schema.ts` creates the tables and tracks the schema version in `PRAGMA user_version`, so a later change adds a migration step. The topics are rewritten from `lib/topics.ts` on every launch, so the table always matches the code. `DatabaseProvider` (in `app/_layout.tsx`) opens `sennin.db` before the app renders and logs a `[db] ready: …` line to the Expo terminal. Transactions use `withTransactionAsync`: `withExclusiveTransactionAsync` opens a new connection for each transaction, and foreign keys are off on that connection.
 - [ ] **3.2 Queries**
   Channels (add, remove, list, set topics), feed items (replace the list, read, update status), watched (insert, check), fetch log (insert, read latest). Removing a channel must not delete its feed items (F2).
+  *Result:* one file per table group in `db/` (`channels.ts`, `feed.ts`, `watched.ts`, `fetchLog.ts`). The row types and the `rejectedByRule` JSON format are in `lib/records.ts`. Hooks get the database with `useDatabase()` from `db/DatabaseProvider.tsx`. The `db/` tests run the real SQL on Node's built-in SQLite through `db/testDatabase.ts`, because expo-sqlite's native module doesn't run in Jest.
 
 ## Phase 4 – YouTube client in `services/youtube.ts`
 
@@ -143,10 +145,11 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Open questions (decide before the step that needs the answer)
 
-- **What `fetch_log.rejectedByRule` stores (3.1):** `CLAUDE.md` asks for each rejected video with its rule. Decide whether to store a JSON list of `{videoId, rule}` or only counts per rule. `applyFilters` in `lib/filterRules.ts` returns the full list (`videoId`, `rule`, `detail`), so either works.
 - **Mood reference image (9.x):** spec §11 points to `assets/reference/mood.jpg`, which isn't in the repo yet.
 
 Decided on 2026-11-06:
+- **What `fetch_log.rejectedByRule` stores (3.1):** a JSON list with one `{videoId, rule, detail}` per rejected video, as text in the SQLite row (not a separate file). The Status screen (8.1) counts them per rule. Only the latest 20 logs are kept. Spec §7 is updated.
+- **Channel name in `feed_item` (3.1):** `feed_item.channelTitle` is saved with each video, so the overlay (7.1) still has the name after the channel is removed (F2). Spec §7 is updated.
 - **Live stream detection (2.4, 4.1):** `videos.list` also requests `snippet` and `liveStreamingDetails` (no extra units). Live, upcoming and ended streams are rejected. Spec §5 is updated.
 - **Keyword exemption (2.4):** a channel assigned to exactly one topic skips the keyword rule, as the spec says. With World War II and Claude Code as the topics, few channels will have both, so the keyword rule will rarely run.
 - **Keywords and blocked words (2.3):** the lists are in `lib/topics.ts`. The second topic is now Claude Code instead of Quantum Computing (spec §2, §9).
