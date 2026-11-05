@@ -189,3 +189,12 @@ export function applyFilters<T extends VideoCandidate>(
   }
   return { passed, rejected };
 }
+
+/** How many videos each rule rejected, with every rule present (0 if none). */
+export function countRejectionsByRule(rejected: readonly Rejection[]): Record<RuleName, number> {
+  const counts = Object.fromEntries(RULE_NAMES.map((rule) => [rule, 0])) as Record<RuleName, number>;
+  for (const { rule } of rejected) {
+    counts[rule] += 1;
+  }
+  return counts;
+}

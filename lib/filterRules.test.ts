@@ -8,6 +8,7 @@ import {
   checkMinViews,
   checkVertical,
   checkVideo,
+  countRejectionsByRule,
   type FilterContext,
   NEW_VIDEO_GRACE_MS,
   type VideoCandidate,
@@ -228,5 +229,35 @@ describe('applyFilters', () => {
 
   it('handles an empty list', () => {
     expect(applyFilters([], context())).toEqual({ passed: [], rejected: [] });
+  });
+});
+
+describe('countRejectionsByRule', () => {
+  it('counts each rule and lists every rule, with 0 for unused ones', () => {
+    const counts = countRejectionsByRule([
+      { rule: 'length', detail: '300 s' },
+      { rule: 'vertical', detail: '1920x1080' },
+      { rule: 'length', detail: '600 s' },
+    ]);
+    expect(counts).toEqual({
+      live: 0,
+      length: 2,
+      vertical: 1,
+      embeddable: 0,
+      blockedWord: 0,
+      keyword: 0,
+      minViews: 0,
+    });
+  });
+
+  it('adds up to the number of rejected videos', () => {
+    const videos = [
+      video({ videoId: 'a', durationSec: 300 }),
+      video({ videoId: 'b', embeddable: false }),
+      video({ videoId: 'c' }),
+    ];
+    const { rejected } = applyFilters(videos, context());
+    const counts = countRejectionsByRule(rejected);
+    expect(Object.values(counts).reduce((sum, n) => sum + n, 0)).toBe(rejected.length);
   });
 });
