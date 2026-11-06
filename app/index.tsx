@@ -14,15 +14,12 @@ import { toFeedPages } from '@/lib/feedPages';
 import { feedPageLayout, type Size } from '@/lib/feedPaging';
 import { colors, sizes, spacing } from '@/theme';
 
-function logPlayerError(videoId: string, error: string) {
-  console.warn(`[player] ${videoId}: ${error}`);
-}
-
 /** The page on screen, tied to the list it belongs to. */
 type Position = { version: number; index: number };
 
-// Feed screen (spec §4, steps 7.1 and 7.2): the saved list from feed_item as
-// a vertical paging feed, opening on the first unwatched video. "Refresh"
+// Feed screen (spec §4, steps 7.1 to 7.3): the saved list from feed_item as
+// a vertical paging feed, opening on the first unwatched video. A video that
+// can't play is replaced from the reserve (F8). "Refresh"
 // builds a new list and the feed starts over at its first video. Nothing
 // plays while Sources or Status covers the Feed.
 export default function FeedScreen() {
@@ -33,7 +30,7 @@ export default function FeedScreen() {
   const [position, setPosition] = useState<Position | null>(null);
   const switchTimer = useSwitchTimer();
   const { refreshing, refresh } = useRefresh();
-  const { state, reload } = useFeed();
+  const { state, reload, onPlayerError } = useFeed();
 
   const onRefresh = async () => {
     const result = await refresh();
@@ -78,7 +75,9 @@ export default function FeedScreen() {
     );
   } else if (state.kind === 'ready' && pageSize && layout) {
     // A new list (new version) starts over at its own start page.
-    const currentIndex = position?.version === state.version ? position.index : state.startIndex;
+    const wantedIndex = position?.version === state.version ? position.index : state.startIndex;
+    // A skip with no reserve left shortens the list; stay within it.
+    const currentIndex = Math.min(wantedIndex, pages.length - 1);
     const onPageChange = (index: number) => {
       const page = pages[index];
       if (page?.kind === 'video') switchTimer.onSwitch(page.item.videoId);
@@ -96,7 +95,7 @@ export default function FeedScreen() {
         active={focused}
         onPageChange={onPageChange}
         onDragEnd={switchTimer.onDragEnd}
-        onPlayerError={logPlayerError}
+        onPlayerError={onPlayerError}
         onPlaying={switchTimer.onPlaying}
       />
     );
