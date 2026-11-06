@@ -1,5 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 
+import { textDirection } from '@/lib/textDirection';
 import type { TopicOption } from '@/lib/topicSelection';
 import type { TopicId } from '@/lib/topics';
 import { colors, fontSize, radius, spacing } from '@/theme';
@@ -16,7 +17,8 @@ type Props = {
 const THUMBNAIL_SIZE = 48;
 
 // One saved channel on the Sources screen (§4): thumbnail, name and topic
-// tags. Tapping a tag assigns or unassigns that topic (F3).
+// tags. Tapping a tag assigns or unassigns that topic (F3). The name takes
+// the direction of its own text (step 9.3), like the titles in the feed.
 export function ChannelRow({ title, thumbnailUrl, topics, onToggleTopic }: Props) {
   return (
     <View style={styles.row}>
@@ -30,7 +32,10 @@ export function ChannelRow({ title, thumbnailUrl, topics, onToggleTopic }: Props
         />
       )}
       <View style={styles.details}>
-        <Text numberOfLines={1} style={styles.title}>
+        <Text
+          numberOfLines={1}
+          style={[styles.title, { direction: textDirection(title) ?? 'inherit' }]}
+        >
           {title}
         </Text>
         <View style={styles.topics}>
