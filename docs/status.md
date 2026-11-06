@@ -153,6 +153,8 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 - [ ] **8.1 Status screen** (§4)
   Shows the last fetch time, videos fetched, rejections per rule and API units used, read from `fetch_log`.
+  *Built (feature/status-screen), waiting for the phone check:* `hooks/useStatus.ts` reads the latest `fetch_log` row once when the screen opens. Refresh runs on the Feed, and Status is closed then, so the log can't change while it's open. `buildStatusReport` in `lib/statusReport.ts` turns the row into the time (local, e.g. "Today 14:32 (5 min ago)"), videos fetched, passed, rejected and units used, plus the count for every rule in the §5 order. Rules that rejected nothing are shown muted. `fetch_log.error` is shown under "Problems" when there is one. The API key line from 0.3 stays. `components/StatusRows.tsx` draws the label and value rows, which follow the phone's right-to-left layout.
+  *Phone check:* open Status before and after a Refresh. The time, counts and units should match the `[fetch]` lines in the Expo terminal, and the per-rule counts should add up to "Rejected".
 
 ## Phase 9 – Visual polish (§11)
 
