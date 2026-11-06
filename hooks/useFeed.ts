@@ -3,13 +3,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useDatabase } from '@/db/DatabaseProvider';
 import { getFeedItems, skipFeedItem } from '@/db/feed';
+import { recordWatched } from '@/db/watched';
+import { useWatchProgress } from '@/hooks/useWatchProgress';
 import { applySkip, formatSkipLine, isSkipError, planSkip } from '@/lib/autoSkip';
 import { feedVideos, startPageIndex } from '@/lib/feedPages';
 import type { FeedItem } from '@/lib/records';
+import { formatWatchedLine, markItemWatched } from '@/lib/watchProgress';
 
-// The saved list for the Feed screen (steps 7.1 and 7.3): reads feed_item,
-// picks the page to open on, and replaces a video that can't play with one
-// from the reserve (F8). Logs [feed] and [skip] lines.
+// The saved list for the Feed screen (steps 7.1, 7.3 and 7.4): reads
+// feed_item, picks the page to open on, replaces a video that can't play with
+// one from the reserve (F8), and saves a video as watched once half of it has
+// played (F9). Logs [feed], [skip] and [watched] lines.
 
 export type FeedState =
   | { kind: 'loading' }
@@ -78,8 +82,38 @@ export function useFeed() {
     };
   }, [db, show]);
 
+  const getItem = useCallback((videoId: string) => {
+    const current = latest.current;
+    return current.kind === 'ready'
+      ? current.items.find((item) => item.videoId === videoId)
+      : undefined;
+  }, []);
+
+  // F9: half played, so save it as watched. Fetches leave watched videos out.
+  const onHalfPlayed = useCallback(
+    (item: FeedItem, playedMs: number) => {
+      const current = latest.current;
+      if (current.kind === 'ready') {
+        const items = markItemWatched(current.items, item.videoId);
+        const next: FeedState = { ...current, items, videos: feedVideos(items) };
+        latest.current = next;
+        setState(next);
+      }
+      console.log(formatWatchedLine(item.videoId, playedMs, item.durationSec));
+      recordWatched(db, item.videoId, Date.now()).catch((cause: unknown) => {
+        console.warn(`[watched] saving ${item.videoId} failed: ${String(cause)}`);
+      });
+    },
+    [db],
+  );
+
+  const { onPlaybackChange, reset: resetWatch } = useWatchProgress(getItem, onHalfPlayed);
+
   /** Reads the list again, e.g. after a Refresh saved a new one. */
-  const reload = useCallback(async () => show(await readFeed(db)), [db, show]);
+  const reload = useCallback(async () => {
+    resetWatch();
+    show(await readFeed(db));
+  }, [db, show, resetWatch]);
 
   /**
    * Call when a player reports an error. If the video can never play here,
@@ -109,5 +143,5 @@ export function useFeed() {
     [db],
   );
 
-  return { state, reload, onPlayerError };
+  return { state, reload, onPlayerError, onPlaybackChange };
 }

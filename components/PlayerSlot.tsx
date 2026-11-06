@@ -57,8 +57,11 @@ type Props = {
   /** Play the video. True only for the current video while the Feed is on screen. */
   playing: boolean;
   onPlayerError: (videoId: string, error: string) => void;
-  /** Called each time the video starts or resumes playing. */
-  onPlaying: (videoId: string) => void;
+  /**
+   * Called on every player state change: true when the video starts or
+   * resumes playing, false when it pauses, buffers, ends or is cued.
+   */
+  onPlaybackChange: (videoId: string, playing: boolean) => void;
 };
 
 // One of the feed's reused players (spec §3, §10). It stays mounted and
@@ -73,12 +76,12 @@ export const PlayerSlot = memo(function PlayerSlot({
   left,
   playing,
   onPlayerError,
-  onPlaying,
+  onPlaybackChange,
 }: Props) {
   const playerRef = useRef<YoutubeIframeRef | null>(null);
 
   const onChangeState = (state: PLAYER_STATES) => {
-    if (state === PLAYER_STATES.PLAYING) onPlaying(videoId);
+    onPlaybackChange(videoId, state === PLAYER_STATES.PLAYING);
     // Loop like the Shorts app (§4). Seeking from the ended state plays again.
     if (state === PLAYER_STATES.ENDED) playerRef.current?.seekTo(0, true);
   };

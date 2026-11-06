@@ -17,6 +17,36 @@ export function pageIndexFromOffset(offsetY: number, pageHeight: number, count: 
   return Math.min(Math.max(index, 0), count - 1);
 }
 
+/**
+ * The page a paging scroll will settle on, read from its first movement after
+ * the finger lifts (step 7.5). The snap animation moves straight to the floor
+ * or the ceiling page of where the finger let go, so its direction tells
+ * which. Returns null if the list hasn't moved yet. Going back to the page
+ * the swipe started from is a valid result.
+ */
+export function snapTargetIndex(
+  releaseOffsetY: number,
+  offsetY: number,
+  pageHeight: number,
+  count: number,
+): number | null {
+  if (
+    count <= 0 ||
+    !(pageHeight > 0) ||
+    !Number.isFinite(releaseOffsetY) ||
+    !Number.isFinite(offsetY)
+  ) {
+    return null;
+  }
+  const delta = offsetY - releaseOffsetY;
+  if (delta === 0) return null;
+  const at = releaseOffsetY / pageHeight;
+  // Moving down the list: the page below the release point. Released exactly
+  // on a page, that is the next one. Moving up: the same, the other way.
+  const index = delta > 0 ? Math.floor(at) + 1 : Math.ceil(at) - 1;
+  return Math.min(Math.max(index, 0), count - 1);
+}
+
 export type FeedPageLayout = {
   /** The player's size. It sits at the top of the page, centered across it. */
   player: Size;

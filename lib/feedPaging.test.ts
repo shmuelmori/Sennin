@@ -3,6 +3,7 @@ import {
   fitAspect,
   pageIndexFromOffset,
   SHORT_ASPECT,
+  snapTargetIndex,
 } from './feedPaging';
 
 describe('pageIndexFromOffset', () => {
@@ -98,5 +99,44 @@ describe('feedPageLayout', () => {
       player: { width: 0, height: 0 },
       infoHeight: 80,
     });
+  });
+});
+
+describe('snapTargetIndex', () => {
+  const H = 800;
+
+  it('is null until the list moves after the release', () => {
+    expect(snapTargetIndex(1200, 1200, H, 10)).toBeNull();
+  });
+
+  it('moving down the list: the page below the release point', () => {
+    expect(snapTargetIndex(1100, 1110, H, 10)).toBe(2);
+  });
+
+  it('moving up the list: the page above the release point', () => {
+    expect(snapTargetIndex(1100, 1090, H, 10)).toBe(1);
+  });
+
+  it('a short drag that snaps back returns the starting page', () => {
+    // Started on page 3 (offset 2400), dragged 60 down the list, snaps back up.
+    expect(snapTargetIndex(2460, 2450, H, 10)).toBe(3);
+    // Dragged 60 up the list, snaps back down.
+    expect(snapTargetIndex(2340, 2350, H, 10)).toBe(3);
+  });
+
+  it('released exactly on a page and moving on: the next page that way', () => {
+    expect(snapTargetIndex(1600, 1610, H, 10)).toBe(3);
+    expect(snapTargetIndex(1600, 1590, H, 10)).toBe(1);
+  });
+
+  it('stays within the list', () => {
+    expect(snapTargetIndex(7300, 7310, H, 10)).toBe(9);
+    expect(snapTargetIndex(0, -5, H, 10)).toBe(0);
+  });
+
+  it('is null for a bad page height, count or offset', () => {
+    expect(snapTargetIndex(100, 110, 0, 10)).toBeNull();
+    expect(snapTargetIndex(100, 110, H, 0)).toBeNull();
+    expect(snapTargetIndex(Number.NaN, 110, H, 10)).toBeNull();
   });
 });

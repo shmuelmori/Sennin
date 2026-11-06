@@ -108,8 +108,8 @@ When a fetch fails (decided on 2026-11-06):
 | F6 | List of 15 videos plus a reserve | Must |
 | F7 | Feed with vertical scrolling and the official player | Must |
 | F8 | Auto-skip a video when the player reports an error (for example, it was deleted, made private or can't be embedded), replacing it from the reserve. A slow video is never skipped: the user decides, since the cause may be weak reception. Changed on 2026-11-06 (was: skip a video that hasn't loaded within 3 seconds) | Must |
-| F9 | Mark as "watched" after half the video has played | Must |
-| F10 | Preload the next video | Nice to have |
+| F9 | Mark as "watched" after half the video has played: the player's own play time, counted across pauses and returns to the video, not counting buffering or time in the background. Decided on 2026-11-06 | Must |
+| F10 | Preload the next video: the neighbors' players are already loaded with their videos (cued, not playing), and the next video starts as soon as the page snap begins after the finger lifts, not when it ends. No hidden or muted playback, to stay within YouTube's policies. Decided on 2026-11-06 | Nice to have |
 | F11 | Status screen | Nice to have |
 
 ## 7. Data model (SQLite)
@@ -140,7 +140,7 @@ When a fetch fails (decided on 2026-11-06):
 ## 9. Decisions
 
 - Maximum length: 3 minutes (180 seconds), the YouTube Shorts limit. Raised from 90 seconds on 2026-11-05, because real Shorts from the chosen channels run longer.
-- "Watched" after half a video.
+- "Watched" after half a video has played (F9). A watched video is saved to `watched` and its `feed_item` becomes `watched`, so later fetches leave it out.
 - Feed (2026-11-06): no tap-to-pause (YouTube's controls do it), no "4 of 15" counter, videos loop, and auto-skip only on a player error.
 - 2 topics only: World War II and Claude Code. Claude Code replaced Quantum Computing on 2026-11-06.
 - Keywords and blocked words are listed in `lib/topics.ts` (agreed 2026-11-06). Matching ignores case and uses whole words. Hebrew words may take a prefix letter (ה, ב, ל, ו, מ, ש, כ). Blocked words use narrow phrases such as "reacts to" instead of plain "reaction", so titles like "chain reaction" or "Churchill's reaction" aren't blocked.

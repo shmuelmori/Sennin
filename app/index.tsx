@@ -1,5 +1,5 @@
 import { Stack, useIsFocused, useRouter } from 'expo-router';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Alert, type LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,9 +17,10 @@ import { colors, sizes, spacing } from '@/theme';
 /** The page on screen, tied to the list it belongs to. */
 type Position = { version: number; index: number };
 
-// Feed screen (spec §4, steps 7.1 to 7.3): the saved list from feed_item as
+// Feed screen (spec §4, steps 7.1 to 7.5): the saved list from feed_item as
 // a vertical paging feed, opening on the first unwatched video. A video that
-// can't play is replaced from the reserve (F8). "Refresh"
+// can't play is replaced from the reserve (F8), and one that has played for
+// half its length is saved as watched (F9). "Refresh"
 // builds a new list and the feed starts over at its first video. Nothing
 // plays while Sources or Status covers the Feed.
 export default function FeedScreen() {
@@ -30,7 +31,16 @@ export default function FeedScreen() {
   const [position, setPosition] = useState<Position | null>(null);
   const switchTimer = useSwitchTimer();
   const { refreshing, refresh } = useRefresh();
-  const { state, reload, onPlayerError } = useFeed();
+  const { state, reload, onPlayerError, onPlaybackChange } = useFeed();
+  const { onPlaying } = switchTimer;
+
+  const onPlayerStateChange = useCallback(
+    (videoId: string, playing: boolean) => {
+      if (playing) onPlaying(videoId);
+      onPlaybackChange(videoId, playing);
+    },
+    [onPlaying, onPlaybackChange],
+  );
 
   const onRefresh = async () => {
     const result = await refresh();
@@ -96,7 +106,7 @@ export default function FeedScreen() {
         onPageChange={onPageChange}
         onDragEnd={switchTimer.onDragEnd}
         onPlayerError={onPlayerError}
-        onPlaying={switchTimer.onPlaying}
+        onPlaybackChange={onPlayerStateChange}
       />
     );
   }
