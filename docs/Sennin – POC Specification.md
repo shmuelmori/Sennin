@@ -34,7 +34,7 @@ Questions the POC answers:
 | Language and UI | TypeScript + React Native |
 | Framework | Expo (development in VS Code, running via Expo Go) |
 | Navigation | Expo Router |
-| Feed | Vertical FlatList with pagingEnabled |
+| Feed | Vertical ScrollView with pagingEnabled, with 3 players reused across pages (changed from FlatList on 2026-11-06, see §10) |
 | Player | react-native-youtube-iframe (official IFrame inside react-native-webview) |
 | Network | fetch against YouTube Data API v3 |
 | Storage | expo-sqlite |
@@ -150,7 +150,7 @@ When a fetch fails (decided on 2026-11-06):
 
 | Risk | Level | Mitigation |
 | --- | --- | --- |
-| Player is slow in the feed | High | Render a player only for the current video and its neighbors; test in the first week |
+| Player is slow in the feed | High | Keep exactly 3 players (the current video and its neighbors) and reuse them by changing their video, instead of creating a player per page. Creating a new player on every swipe stopped working after about 10 players (found in step 7.1) |
 | Inaccurate Shorts detection | Medium | Combine length and aspect ratio |
 | Non-educational videos from good channels | Medium | Keywords and blocked words |
 | Few new videos | Low | Fill in with older unwatched videos |
