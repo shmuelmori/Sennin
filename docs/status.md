@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 8.1
+**Next step:** 9.1
 
 ---
 
@@ -151,8 +151,9 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 8 – Status screen (F11, nice to have)
 
-- [ ] **8.1 Status screen** (§4)
+- [x] **8.1 Status screen** (§4) (2026-11-06, feature/status-screen)
   Shows the last fetch time, videos fetched, rejections per rule and API units used, read from `fetch_log`.
+  *Result:* works on the phone. Before a Refresh, Status showed the 13:06 fetch "48 min ago". After it, it showed "Today 13:55 (just now)" with 75 fetched, 35 passed, 40 rejected (all by length) and 4 units, the same as the `[fetch]` lines. The first row was renamed from "Last fetch" to "Time", because the section heading already says "Last fetch". `hooks/useStatus.ts` reads the latest `fetch_log` row once when the screen opens. Refresh runs on the Feed, and Status is closed then, so the log can't change while it's open. `buildStatusReport` in `lib/statusReport.ts` turns the row into the time (local, e.g. "Today 14:32 (5 min ago)"), videos fetched, passed, rejected and units used, plus the count for every rule in the §5 order. Rules that rejected nothing are shown muted. `fetch_log.error` is shown under "Problems" when there is one. The API key line from 0.3 stays. `components/StatusRows.tsx` draws the label and value rows, which follow the phone's layout direction.
 
 ## Phase 9 – Visual polish (§11)
 
@@ -192,8 +193,8 @@ Decided on 2026-11-06:
 
 | Measure | Target | Result |
 | --- | --- | --- |
-| Video switch time | < 1 s in 80% of switches | Step 1.2: 8% under 1 s (1 of 12), median 1.13 s. Not met, but the user found it good in use. Step 7.1 (3 reused players): 41% under 1 s (13 of 32), median 1.10 s, slowest 5.9 s (one outlier). New videos took about 1.0–1.5 s, videos already played about 0.55 s. Not met. |
-| App open with an existing list | < 2 s | Step 7.3 test: 3.2 s (also after a fresh bundle). Step 7.1: one measurement, 2.6 s from the app's JavaScript starting to the first video playing (reading the list took 25 ms). Taken right after a fresh bundle in dev mode. Step 7.6: the user found it good on the phone; numbers not recorded. Re-measure in 10.1. |
+| Video switch time | < 1 s in 80% of switches | Step 1.2: 8% under 1 s (1 of 12), median 1.13 s. Not met, but the user found it good in use. Step 7.1 (3 reused players): 41% under 1 s (13 of 32), median 1.10 s, slowest 5.9 s (one outlier). New videos took about 1.0–1.5 s, videos already played about 0.55 s. Not met. Step 8.1 session (dev mode, only 4 switches): 3 of 4 under 1 s, median 964 ms, slowest 1.25 s, page picked after 16–25 ms. Re-measure with ~30 switches in 10.1. |
+| App open with an existing list | < 2 s | Step 7.3 test: 3.2 s (also after a fresh bundle). Step 7.1: one measurement, 2.6 s from the app's JavaScript starting to the first video playing (reading the list took 25 ms). Taken right after a fresh bundle in dev mode. Step 7.6: the user found it good on the phone; numbers not recorded. Step 8.1 session (dev mode): 2.8 s (reading the list took 27 ms). Re-measure in 10.1. |
 | Fetch duration | < 60 s | Step 6.2: 1.3 s and 0.8 s with 2 channels (100 uploads). Met, re-measure with the full channel list in 10.1. |
 | Fetch quota | < 100 units | Step 6.2: 4 units with 2 channels. About 60 expected for 30 channels. Met. |
 

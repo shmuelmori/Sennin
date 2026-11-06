@@ -66,6 +66,7 @@ Questions the POC answers:
 **Status**
 
 - Time of the last fetch, how many videos were fetched, how many were rejected and by which rule, and API units used.
+- Every rule is listed in the §5 order, including rules that rejected nothing. The fetch's error (a failure or skipped channels) is shown when there is one, and so is whether the API key is loaded. Added on 2026-11-06.
 
 ## 5. Fetch process
 
