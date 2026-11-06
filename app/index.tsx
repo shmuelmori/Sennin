@@ -3,7 +3,7 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { Alert, type LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FeedList } from '@/components/FeedList';
+import { FeedPager } from '@/components/FeedPager';
 import { HeaderButton } from '@/components/HeaderButton';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
@@ -16,6 +16,11 @@ import { colors, sizes, spacing } from '@/theme';
 
 function logPlayerError(videoId: string, error: string) {
   console.warn(`[player] ${videoId}: ${error}`);
+}
+
+// TEMPORARY diagnostics for the player checks in 7.1. Remove before merging.
+function logPlayer(videoId: string, line: string) {
+  console.log(`[player] ${videoId}: ${line}`);
 }
 
 /** The page on screen, tied to the list it belongs to. */
@@ -85,7 +90,7 @@ export default function FeedScreen() {
       setPosition({ version: state.version, index });
     };
     body = (
-      <FeedList
+      <FeedPager
         key={state.version}
         pages={pages}
         pageSize={pageSize}
@@ -98,6 +103,7 @@ export default function FeedScreen() {
         onDragEnd={switchTimer.onDragEnd}
         onPlayerError={logPlayerError}
         onPlaying={switchTimer.onPlaying}
+        onPlayerLog={logPlayer}
       />
     );
   }
