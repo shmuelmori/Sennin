@@ -66,7 +66,7 @@ theme/        colors and spacing from section 11
 ## UI
 - Define the palette from spec §11 once, in a theme file. Components import from it; no hex literals in components.
 - Text on Sunset (#E0533A) or Teal Mist (#2F8F8A) buttons is Deep Sea Night (#0E2A2F) and bold. Use Silver and Cherry Blossom only for text on Deep Sea Night.
-- Overlays (channel name, title, "4 of 15") sit at the bottom and must not cover the player's controls. Decorative art (sakura, clouds) never goes over the player.
+- The channel name and title sit in a strip below the player and never cover it or its controls. Decorative art (sakura, clouds) never goes over the player.
 - Use calm motion only: fades, no bounce or spring animations.
 - Text can be Hebrew or English, so don't hard-code left alignment.
 

@@ -1,11 +1,15 @@
 import { useCallback, useRef } from 'react';
 
 import {
+  formatOpenLine,
   formatSkippedLine,
   formatSwitchLine,
   formatSwitchSummary,
   summarizeSwitchTimes,
 } from '@/lib/switchTiming';
+
+// When this module first loads, which is while the app's JavaScript starts.
+const appStartedAt = Date.now();
 
 type PendingSwitch = {
   videoId: string;
@@ -16,11 +20,14 @@ type PendingSwitch = {
 // Measures video switch time (spec §8, status.md step 1.2): from the moment
 // the finger lifts after a swipe until the new video reports "playing".
 // Logs each switch and a running summary to the terminal running Expo.
+// Also logs, once, how long after the app started the first video played
+// (spec §8, app open with an existing list).
 export function useSwitchTimer() {
   const lastDragEndAt = useRef<number | null>(null);
   const pending = useRef<PendingSwitch | null>(null);
   const times = useRef<number[]>([]);
   const skipped = useRef(0);
+  const openLogged = useRef(false);
 
   /** Call when the finger lifts after a drag. */
   const onDragEnd = useCallback(() => {
@@ -40,6 +47,10 @@ export function useSwitchTimer() {
 
   /** Call when a video reports "playing". Ignores videos that weren't just switched to. */
   const onPlaying = useCallback((videoId: string) => {
+    if (!openLogged.current) {
+      openLogged.current = true;
+      console.log(formatOpenLine(videoId, Date.now() - appStartedAt));
+    }
     const current = pending.current;
     if (!current || current.videoId !== videoId) return;
     pending.current = null;

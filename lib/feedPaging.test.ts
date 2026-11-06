@@ -1,4 +1,9 @@
-import { fitAspect, pageIndexFromOffset, SHORT_ASPECT, shouldMountPlayer } from './feedPaging';
+import {
+  feedPageLayout,
+  fitAspect,
+  pageIndexFromOffset,
+  SHORT_ASPECT,
+} from './feedPaging';
 
 describe('pageIndexFromOffset', () => {
   it('returns the page at an exact offset', () => {
@@ -30,30 +35,6 @@ describe('pageIndexFromOffset', () => {
   });
 });
 
-describe('shouldMountPlayer', () => {
-  it('mounts the current item and its direct neighbors', () => {
-    expect(shouldMountPlayer(4, 4)).toBe(true);
-    expect(shouldMountPlayer(3, 4)).toBe(true);
-    expect(shouldMountPlayer(5, 4)).toBe(true);
-  });
-
-  it('does not mount items further away', () => {
-    expect(shouldMountPlayer(2, 4)).toBe(false);
-    expect(shouldMountPlayer(6, 4)).toBe(false);
-    expect(shouldMountPlayer(14, 0)).toBe(false);
-  });
-
-  it('accepts a wider neighbor window', () => {
-    expect(shouldMountPlayer(6, 4, 2)).toBe(true);
-    expect(shouldMountPlayer(7, 4, 2)).toBe(false);
-  });
-
-  it('mounts only the current item with no neighbors', () => {
-    expect(shouldMountPlayer(4, 4, 0)).toBe(true);
-    expect(shouldMountPlayer(5, 4, 0)).toBe(false);
-  });
-});
-
 describe('fitAspect', () => {
   it('fills the width when the container is taller than 9:16', () => {
     const size = fitAspect({ width: 412, height: 800 }, SHORT_ASPECT);
@@ -81,6 +62,41 @@ describe('fitAspect', () => {
     expect(fitAspect({ width: 412, height: 800 }, { width: 0, height: 16 })).toEqual({
       width: 0,
       height: 0,
+    });
+  });
+});
+
+describe('feedPageLayout', () => {
+  it('gives the strip its minimum and the player the rest, when the player is limited by height', () => {
+    const layout = feedPageLayout({ width: 412, height: 800 }, 100);
+    expect(layout.player).toEqual({ width: (700 * 9) / 16, height: 700 });
+    expect(layout.infoHeight).toBe(100);
+  });
+
+  it('gives the strip the height left over when the player is limited by width', () => {
+    const layout = feedPageLayout({ width: 360, height: 800 }, 100);
+    expect(layout.player).toEqual({ width: 360, height: 640 });
+    expect(layout.infoHeight).toBe(160);
+  });
+
+  it('always adds up to the page height', () => {
+    for (const minInfo of [0, 50, 84, 120]) {
+      const layout = feedPageLayout({ width: 411.4, height: 781.3 }, minInfo);
+      expect(layout.player.height + layout.infoHeight).toBeCloseTo(781.3);
+      expect(layout.infoHeight).toBeGreaterThanOrEqual(minInfo);
+    }
+  });
+
+  it('treats a negative or bad minimum as no minimum', () => {
+    const full = { width: 360, height: 640 };
+    expect(feedPageLayout(full, -20)).toEqual({ player: full, infoHeight: 0 });
+    expect(feedPageLayout(full, Number.NaN)).toEqual({ player: full, infoHeight: 0 });
+  });
+
+  it('gives the whole page to the strip when there is no room for a player', () => {
+    expect(feedPageLayout({ width: 412, height: 80 }, 100)).toEqual({
+      player: { width: 0, height: 0 },
+      infoHeight: 80,
     });
   });
 });
