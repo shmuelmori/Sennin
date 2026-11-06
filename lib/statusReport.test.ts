@@ -94,7 +94,7 @@ describe('buildStatusReport', () => {
     const report = buildStatusReport(log({ rejected: REJECTED }), NOW);
     if (!report.hasFetch) throw new Error('expected a fetch');
     expect(report.summary).toEqual([
-      { label: 'Last fetch', value: 'Today 14:32 (5 min ago)' },
+      { label: 'Time', value: 'Today 14:32 (5 min ago)' },
       { label: 'Videos fetched', value: '100' },
       { label: 'Passed the filters', value: '97' },
       { label: 'Rejected', value: '3' },

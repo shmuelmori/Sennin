@@ -81,7 +81,7 @@ export function buildStatusReport(log: FetchLog | null, nowMs: number): StatusRe
   return {
     hasFetch: true,
     summary: [
-      { label: 'Last fetch', value: formatFetchTime(log.startedAtMs, nowMs) },
+      { label: 'Time', value: formatFetchTime(log.startedAtMs, nowMs) },
       { label: 'Videos fetched', value: String(log.fetched) },
       { label: 'Passed the filters', value: String(Math.max(0, log.fetched - rejected)) },
       { label: 'Rejected', value: String(rejected) },
