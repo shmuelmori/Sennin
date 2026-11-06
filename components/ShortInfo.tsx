@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { textDirection } from '@/lib/textDirection';
 import { colors, fontSize, spacing } from '@/theme';
 
 type Props = {
@@ -11,15 +12,22 @@ type Props = {
 };
 
 // The strip under a feed video (§4): channel name and title. It sits below
-// the player, never over it. Alignment is left to the text, so Hebrew and
-// English titles both read naturally.
+// the player, never over it. Each line takes the direction of its own text
+// (step 9.3), so a Hebrew title starts on the right and an English one on
+// the left, whatever the phone's language.
 export function ShortInfo({ channelTitle, title, height, bottomInset }: Props) {
   return (
     <View style={[styles.strip, { height, paddingBottom: bottomInset + spacing.sm }]}>
-      <Text style={styles.channel} numberOfLines={1}>
+      <Text
+        style={[styles.channel, { direction: textDirection(channelTitle) ?? 'inherit' }]}
+        numberOfLines={1}
+      >
         {channelTitle}
       </Text>
-      <Text style={styles.title} numberOfLines={2}>
+      <Text
+        style={[styles.title, { direction: textDirection(title) ?? 'inherit' }]}
+        numberOfLines={2}
+      >
         {title}
       </Text>
     </View>
