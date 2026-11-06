@@ -86,3 +86,46 @@ export async function setFeedItemStatus(
   ]);
   return result.changes > 0;
 }
+
+/**
+ * Auto-skip (F8): marks a video skipped and, if a replacement is given, swaps
+ * their positions and reserve flags in one transaction, so the replacement
+ * takes the skipped video's place in the feed. The same change as `applySkip`
+ * in lib/autoSkip.ts. Returns false if either video isn't in the list.
+ */
+export async function skipFeedItem(
+  db: SQLiteDatabase,
+  videoId: string,
+  replacementVideoId: string | null,
+): Promise<boolean> {
+  let done = false;
+  await db.withTransactionAsync(async () => {
+    const skipped = await db.getFirstAsync<{ position: number }>(
+      'SELECT position FROM feed_item WHERE videoId = ?',
+      [videoId],
+    );
+    if (skipped === null) return;
+    if (replacementVideoId === null) {
+      await db.runAsync("UPDATE feed_item SET status = 'skipped' WHERE videoId = ?", [videoId]);
+      done = true;
+      return;
+    }
+    const replacement = await db.getFirstAsync<{ position: number }>(
+      'SELECT position FROM feed_item WHERE videoId = ?',
+      [replacementVideoId],
+    );
+    if (replacement === null) return;
+    // position is the primary key, so park the skipped row first.
+    await db.runAsync('UPDATE feed_item SET position = -1 WHERE videoId = ?', [videoId]);
+    await db.runAsync('UPDATE feed_item SET position = ?, isReserve = 0 WHERE videoId = ?', [
+      skipped.position,
+      replacementVideoId,
+    ]);
+    await db.runAsync(
+      "UPDATE feed_item SET position = ?, isReserve = 1, status = 'skipped' WHERE videoId = ?",
+      [replacement.position, videoId],
+    );
+    done = true;
+  });
+  return done;
+}
