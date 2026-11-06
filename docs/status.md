@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** phone test of 7.4–7.6 (built on feature/watched-preload), then 8.1
+**Next step:** 8.1
 
 ---
 
@@ -134,18 +134,20 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 - [x] **7.3 Auto-skip** (F8) (2026-11-06, feature/auto-skip)
   When the player reports an error, skip the video and replace it from the reserve. A slow video is not skipped (decided 2026-11-06).
   *Result:* works on the phone. A temporary test gave video 2 an ID that doesn't exist. Its player, still a neighbor of video 1, reported `embed_not_allowed` (not `video_not_found`, as you might expect), and the first reserve video took its place before the user swiped to it. `lib/autoSkip.ts` skips on `video_not_found`, `embed_not_allowed` and `invalid_parameter`, but not on `HTML5_error`, which a weak connection can cause. The skipped video and its replacement swap positions and reserve flags (`skipFeedItem` in `db/feed.ts`, in one transaction), and the skipped one is marked `skipped`. The feed stays on the same page. With no reserve left, the video just leaves the list. That the skip survives an app restart is covered by the `db/` tests, not checked on the phone.
-- [ ] **7.4 Mark as watched** (F9)
+- [x] **7.4 Mark as watched** (F9) (2026-11-06, feature/watched-preload)
   Save to `watched` once half the video has played. Watched videos don't come back in later fetches.
-  *Built, phone test pending (feature/watched-preload):* `PlayerSlot` now reports every player state. `hooks/useWatchProgress.ts` counts each video's play time (`lib/watchProgress.ts`): pauses, buffering and time with the app in the background don't count, and coming back to a video adds to its earlier time. When the playing video reaches half its length, `recordWatched` (`db/watched.ts`) saves it to `watched` and sets its `feed_item` to `watched` in one transaction, and a `[watched] <id>: 30.0 s of 60 s played` line is logged. The fetch already leaves watched videos out (`getWatchedIds` in `useRefresh`).
-- [ ] **7.5 Preload the next video** (F10, nice to have)
-  *Built, phone test pending (feature/watched-preload):* the neighbors were already cued in their players (7.1). Now `FeedPager` picks the new page from the snap's first movement after the finger lifts (`snapTargetIndex` in `lib/feedPaging.ts`), so the video starts while the page slides in, instead of after the ~0.26 s snap. `onMomentumScrollEnd` still corrects a wrong pick. The `[switch]` line now shows "page picked after X ms" instead of the snap time; it should be close to 0.
-- [ ] **7.6 Re-measure on the phone** (§8)
+  *Result:* the user checked it on the phone and it works. `PlayerSlot` now reports every player state. `hooks/useWatchProgress.ts` counts each video's play time (`lib/watchProgress.ts`): pauses, buffering and time with the app in the background don't count, and coming back to a video adds to its earlier time. When the playing video reaches half its length, `recordWatched` (`db/watched.ts`) saves it to `watched` and sets its `feed_item` to `watched` in one transaction, and a `[watched] <id>: 30.0 s of 60 s played` line is logged. The fetch already leaves watched videos out (`getWatchedIds` in `useRefresh`).
+- [x] **7.5 Preload the next video** (F10, nice to have) (2026-11-06, feature/watched-preload)
+  *Result:* the user checked it on the phone and it works. The neighbors were already cued in their players (7.1). Now `FeedPager` picks the new page from the snap's first movement after the finger lifts (`snapTargetIndex` in `lib/feedPaging.ts`), so the video starts while the page slides in, instead of after the ~0.26 s snap. `onMomentumScrollEnd` still corrects a wrong pick. The `[switch]` line now shows "page picked after X ms" instead of the snap time; it should be close to 0.
+- [x] **7.6 Re-measure on the phone** (§8) (2026-11-06, feature/watched-preload)
   Switch time again (target: under 1 s in 80% of cases), and opening the app with an existing list (target: under 2 s).
   *Test plan:* run `npx expo start --no-dev --minify` (still Expo Go, but closer to real use than dev mode).
   1. Switching: about 30 swipes, both directions, at a normal pace. Read the last `[switch] … switches: …` summary line. Check that "page picked after" stays small, and that a short drag that snaps back doesn't change the video.
   2. Watched: let one video play past half its length. A `[watched]` line should appear. Close Expo Go and reopen: the feed should open on the first video not yet watched, so not on that one.
   3. Opening: close Expo Go fully and reopen it 3 times with a list saved. Read the `[open] … ms` line each time.
   4. Also check that the video loops and that Sources and Status still pause it.
+
+  *Result:* the user ran the checks on the phone and reported all good. The `[switch]` and `[open]` numbers weren't recorded here; add them to the table below if they're available, otherwise take them in 10.1.
 
 ## Phase 8 – Status screen (F11, nice to have)
 
@@ -191,7 +193,7 @@ Decided on 2026-11-06:
 | Measure | Target | Result |
 | --- | --- | --- |
 | Video switch time | < 1 s in 80% of switches | Step 1.2: 8% under 1 s (1 of 12), median 1.13 s. Not met, but the user found it good in use. Step 7.1 (3 reused players): 41% under 1 s (13 of 32), median 1.10 s, slowest 5.9 s (one outlier). New videos took about 1.0–1.5 s, videos already played about 0.55 s. Not met. |
-| App open with an existing list | < 2 s | Step 7.3 test: 3.2 s (also after a fresh bundle). Step 7.1: one measurement, 2.6 s from the app's JavaScript starting to the first video playing (reading the list took 25 ms). Taken right after a fresh bundle in dev mode. Not met; re-measure in 7.6. |
+| App open with an existing list | < 2 s | Step 7.3 test: 3.2 s (also after a fresh bundle). Step 7.1: one measurement, 2.6 s from the app's JavaScript starting to the first video playing (reading the list took 25 ms). Taken right after a fresh bundle in dev mode. Step 7.6: the user found it good on the phone; numbers not recorded. Re-measure in 10.1. |
 | Fetch duration | < 60 s | Step 6.2: 1.3 s and 0.8 s with 2 channels (100 uploads). Met, re-measure with the full channel list in 10.1. |
 | Fetch quota | < 100 units | Step 6.2: 4 units with 2 channels. About 60 expected for 30 channels. Met. |
 
