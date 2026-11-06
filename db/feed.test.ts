@@ -1,8 +1,9 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import { applySkip, planSkip } from '@/lib/autoSkip';
 import type { NewFeedItem } from '@/lib/records';
 
-import { getFeedItems, replaceFeed, setFeedItemStatus } from './feed';
+import { getFeedItems, replaceFeed, setFeedItemStatus, skipFeedItem } from './feed';
 import { initDatabase } from './schema';
 import { openTestDatabase } from './testDatabase';
 
@@ -78,5 +79,52 @@ describe('setFeedItemStatus', () => {
   it('returns false for a video that is not in the list', async () => {
     await replaceFeed(db, [video('a')], []);
     expect(await setFeedItemStatus(db, 'zzz', 'watched')).toBe(false);
+  });
+});
+
+describe('skipFeedItem', () => {
+  it('puts the replacement in the skipped video’s place and marks it skipped', async () => {
+    await replaceFeed(db, [video('a'), video('b')], [video('r1'), video('r2')]);
+    expect(await skipFeedItem(db, 'a', 'r1')).toBe(true);
+    const items = await getFeedItems(db);
+    expect(items.map(({ videoId, position, isReserve, status }) => ({
+      videoId,
+      position,
+      isReserve,
+      status,
+    }))).toEqual([
+      { videoId: 'r1', position: 0, isReserve: false, status: 'unseen' },
+      { videoId: 'b', position: 1, isReserve: false, status: 'unseen' },
+      { videoId: 'a', position: 2, isReserve: true, status: 'skipped' },
+      { videoId: 'r2', position: 3, isReserve: true, status: 'unseen' },
+    ]);
+  });
+
+  it('only marks the video skipped when there is no replacement', async () => {
+    await replaceFeed(db, [video('a'), video('b')], []);
+    expect(await skipFeedItem(db, 'a', null)).toBe(true);
+    const items = await getFeedItems(db);
+    expect(items.map((item) => [item.videoId, item.position, item.status])).toEqual([
+      ['a', 0, 'skipped'],
+      ['b', 1, 'unseen'],
+    ]);
+  });
+
+  it('matches applySkip in lib/autoSkip.ts', async () => {
+    await replaceFeed(db, [video('a'), video('b'), video('c')], [video('r1'), video('r2')]);
+    const before = await getFeedItems(db);
+    const plan = planSkip(before, 'b');
+    if (!plan) throw new Error('expected a plan');
+    await skipFeedItem(db, 'b', plan.replacement?.videoId ?? null);
+    const expected = applySkip(before, plan).sort((x, y) => x.position - y.position);
+    expect(await getFeedItems(db)).toEqual(expected);
+  });
+
+  it('returns false and changes nothing for an unknown video or replacement', async () => {
+    await replaceFeed(db, [video('a')], [video('r1')]);
+    const before = await getFeedItems(db);
+    expect(await skipFeedItem(db, 'zzz', 'r1')).toBe(false);
+    expect(await skipFeedItem(db, 'a', 'zzz')).toBe(false);
+    expect(await getFeedItems(db)).toEqual(before);
   });
 });
