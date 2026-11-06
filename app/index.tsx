@@ -73,7 +73,11 @@ export default function FeedScreen() {
     );
   } else if (state.kind === 'ready' && state.videos.length === 0) {
     body = (
-      <ScreenPlaceholder title="No videos yet" lines={['Tap Refresh to build a list of Shorts.']}>
+      <ScreenPlaceholder
+        decorated
+        title="No videos yet"
+        lines={['Tap Refresh to build a list of Shorts.']}
+      >
         <View style={styles.emptyButton}>
           <PrimaryButton
             label={refreshing ? 'Refreshing…' : 'Refresh'}

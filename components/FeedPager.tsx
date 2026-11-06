@@ -124,6 +124,7 @@ export function FeedPager({
         ) : (
           <View key={feedPageKey(page)} style={pageSize}>
             <ScreenPlaceholder
+              decorated
               title="That's it for today"
               lines={['Tap Refresh for a new list.']}
             />
