@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 7.4
+**Next step:** phone test of 7.4–7.6 (built on feature/watched-preload), then 8.1
 
 ---
 
@@ -136,9 +136,16 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
   *Result:* works on the phone. A temporary test gave video 2 an ID that doesn't exist. Its player, still a neighbor of video 1, reported `embed_not_allowed` (not `video_not_found`, as you might expect), and the first reserve video took its place before the user swiped to it. `lib/autoSkip.ts` skips on `video_not_found`, `embed_not_allowed` and `invalid_parameter`, but not on `HTML5_error`, which a weak connection can cause. The skipped video and its replacement swap positions and reserve flags (`skipFeedItem` in `db/feed.ts`, in one transaction), and the skipped one is marked `skipped`. The feed stays on the same page. With no reserve left, the video just leaves the list. That the skip survives an app restart is covered by the `db/` tests, not checked on the phone.
 - [ ] **7.4 Mark as watched** (F9)
   Save to `watched` once half the video has played. Watched videos don't come back in later fetches.
+  *Built, phone test pending (feature/watched-preload):* `PlayerSlot` now reports every player state. `hooks/useWatchProgress.ts` counts each video's play time (`lib/watchProgress.ts`): pauses, buffering and time with the app in the background don't count, and coming back to a video adds to its earlier time. When the playing video reaches half its length, `recordWatched` (`db/watched.ts`) saves it to `watched` and sets its `feed_item` to `watched` in one transaction, and a `[watched] <id>: 30.0 s of 60 s played` line is logged. The fetch already leaves watched videos out (`getWatchedIds` in `useRefresh`).
 - [ ] **7.5 Preload the next video** (F10, nice to have)
+  *Built, phone test pending (feature/watched-preload):* the neighbors were already cued in their players (7.1). Now `FeedPager` picks the new page from the snap's first movement after the finger lifts (`snapTargetIndex` in `lib/feedPaging.ts`), so the video starts while the page slides in, instead of after the ~0.26 s snap. `onMomentumScrollEnd` still corrects a wrong pick. The `[switch]` line now shows "page picked after X ms" instead of the snap time; it should be close to 0.
 - [ ] **7.6 Re-measure on the phone** (§8)
   Switch time again (target: under 1 s in 80% of cases), and opening the app with an existing list (target: under 2 s).
+  *Test plan:* run `npx expo start --no-dev --minify` (still Expo Go, but closer to real use than dev mode).
+  1. Switching: about 30 swipes, both directions, at a normal pace. Read the last `[switch] … switches: …` summary line. Check that "page picked after" stays small, and that a short drag that snaps back doesn't change the video.
+  2. Watched: let one video play past half its length. A `[watched]` line should appear. Close Expo Go and reopen: the feed should open on the first video not yet watched, so not on that one.
+  3. Opening: close Expo Go fully and reopen it 3 times with a list saved. Read the `[open] … ms` line each time.
+  4. Also check that the video loops and that Sources and Status still pause it.
 
 ## Phase 8 – Status screen (F11, nice to have)
 
