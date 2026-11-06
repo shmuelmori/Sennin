@@ -157,11 +157,23 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 9 – Visual polish (§11)
 
+Built on `feature/visual-polish`, waiting for the phone check below.
+
 - [ ] **9.1 Decorative art**
   Sakura, clouds and mountains on the empty and end screens only, never over the player. Calm fades.
+  *Result:* one dusk scene, `assets/images/dusk.jpg` (1080x2160, 89 KB): a sakura branch from the top corner, swirling ukiyo-e clouds, a low Sunset sun, a pagoda on the far ridge, three misty ridges and a low branch in front. The middle third is plain dark sky, where the centered text sits. `components/DuskBackdrop.tsx` draws it with `resizeMode="cover"` and fades it in over 0.9 s once the image has loaded (Android's own image fade is turned off). `ScreenPlaceholder` takes a `decorated` flag, set only on the "No videos yet" and "That's it for today" screens. The "Couldn't read the list" screen stays plain. The art is a picture rather than shapes built from Views, so it could be checked by eye before going on the phone, and no new dependency (such as `react-native-svg`) was needed. The mood reference is `assets/Sennin.mp4`, already in the repo (spec §11 is updated).
 - [ ] **9.2 App icon and splash screen**
+  *Result:* `scripts/generate_art.py` (Python 3 with Pillow) draws every image from the §11 palette, seeded, so a rerun gives the same files: `icon.png`, the three adaptive icon layers (sky behind; sun, cloud, ridges and a sakura sprig in front, kept inside the safe circle; a one-color sun-over-ridges for themed icons) and `splash-icon.png` (the same motif in a round medallion). `app.json` now uses Deep Sea Night instead of the template's blue colors, with a 200 dp splash image. Expo Go shows its own launcher icon, so the icon only fully shows in a standalone build, which this POC doesn't make.
 - [ ] **9.3 Hebrew and English check**
   Hebrew titles and channel names align correctly in the overlays and on the Sources screen.
+  *Result:* found in the React Native source (`TextLayoutManager.kt`, new architecture): with no `textAlign`, Android aligns text by the app's layout direction, not by its language. On this right-to-left phone, English titles were also right-aligned, and the `ShortInfo` comment saying alignment was "left to the text" was wrong. `textDirection` in `lib/textDirection.ts` returns the direction of the first letter, the same rule Android uses to order the text (`FIRSTSTRONG_LTR`), or `null` when there is no letter. The feed's channel name and title and the Sources channel name set it as their `direction` style, so each starts on its own side. App labels (buttons, Status rows) still follow the phone. Spec §11 is updated.
+
+  *Phone test plan (Expo Go, `npx expo start`):*
+  1. Feed: swipe through the list, with at least one Hebrew and one English video if possible. Hebrew titles and channel names start on the right, English ones on the left, and a mixed title such as "Claude Code: מדריך" reads in the right order. Two-line titles wrap and end in "…" on the correct side.
+  2. Sources: add a Hebrew channel if you have one in mind. Its name starts on the right, next to the thumbnail; English names start on the left. Also check how a pasted link looks while typing in the add box (left as it was).
+  3. End page: swipe past the last video. The dusk scene fades in behind "That's it for today", the text is easy to read, and nothing of the art shows on the video pages or over a player.
+  4. Empty screen: hard to reach with a saved list, so this one can be skipped (as in 7.2). It uses the same component as the end page.
+  5. Splash: close Expo Go fully and reopen the project. Note whether the Sennin medallion on Deep Sea Night shows while it loads (Expo Go may show its own screen instead).
 
 ## Phase 10 – POC wrap-up
 
@@ -172,9 +184,10 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Open questions (decide before the step that needs the answer)
 
-- **Mood reference image (9.x):** spec §11 points to `assets/reference/mood.jpg`, which isn't in the repo yet.
+None right now.
 
 Decided on 2026-11-06:
+- **Visual polish (Phase 9):** the mood reference is `assets/Sennin.mp4`, already in the repo, instead of a separate `mood.jpg`. The art is generated pictures (`scripts/generate_art.py`), not `react-native-svg`, so no dependency is added. Titles and channel names align by their own text, app labels by the phone. Spec §11 is updated.
 - **Feed behavior (Phase 7):** no tap-to-pause, because the YouTube player's own controls already pause and resume, and catching taps would mean covering the player. No "4 of 15" counter. The player sits at the top of the page, with the channel name and title in a strip below it. Videos loop when they end. Auto-skip (F8) happens only on a player error; a slow video is left for the user to skip, since the cause may be weak reception. On opening, the feed starts at the first video not yet watched or skipped. After a Refresh, it starts at video 1. Spec §4, §6, §9 and §11 are updated.
 - **Preloading (7.5):** no hidden or muted playback of neighbor videos, to stay within YouTube's policies. Only start playback when the finger lifts.
 - **Fetch failures (6.1):** a key or quota error stops the fetch. Any other error on one channel's uploads skips only that channel, and `fetch_log.error` names it. A failed fetch, or one where no video passes, keeps the current list. "New since the previous fetch" counts from the start of the last fetch with `fetched > 0`. Spec §5 and §7 are updated.

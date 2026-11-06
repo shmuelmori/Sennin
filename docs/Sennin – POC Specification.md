@@ -177,7 +177,8 @@ When a fetch fails (decided on 2026-11-06):
 **Style:**
 - Flat colors, soft rounded corners, no gradients except subtle cloud-like ones in decorative art.
 - Calm motion: gentle fades, no bouncy animations.
-- Hebrew and English text both supported; keep typography clean and simple.
-- Reference image: `assets/reference/mood.jpg` (the wandering swordsman under cherry blossoms). Use it for color and mood only, not as a UI element.
+- Hebrew and English text both supported; keep typography clean and simple. Titles and channel names take the direction of their own first letter, so a Hebrew title starts on the right and an English one on the left, whatever the phone's language. App labels follow the phone's layout direction. Decided on 2026-11-06.
+- Reference image: `assets/Sennin.mp4` (a short clip of the wandering swordsman under cherry blossoms; it replaces the planned `mood.jpg`). Use it for color and mood only, not as a UI element.
+- Decorative art (2026-11-06): one dusk scene (`assets/images/dusk.jpg`) with sakura branches, swirling clouds, misty ridges, a pagoda and a low sun, behind the empty and end screens only. It fades in once loaded. Its middle third is plain dark sky, where the text sits. The app icon and splash use the same motif (sun, ridges, a sakura sprig). All of it is drawn by `scripts/generate_art.py` from the palette above, so rerun the script after a palette change.
 
 **YouTube constraint:** the theme applies only around the player (the channel name and title below it). The player itself keeps YouTube's branding, controls and ads untouched (see section 8).

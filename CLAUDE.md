@@ -55,6 +55,7 @@ lib/          pure logic + tests
 services/     YouTube API client
 db/           SQLite schema and queries
 theme/        colors and spacing from section 11
+scripts/      dev tools, not part of the app (generate_art.py draws the art, icon and splash)
 ```
 
 **General:**
