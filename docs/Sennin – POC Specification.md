@@ -46,10 +46,14 @@ Questions the POC answers:
 
 **Feed**
 
-- Full-screen video, channel name and title at the bottom, a "4 of 15" counter.
-- Swipe up: next video. Swipe down: previous video. Tap: pause and resume.
+- Full-screen video at the top of the page, with the channel name and title in a strip below it, so nothing covers the player.
+- Swipe up: next video. Swipe down: previous video.
+- Pause and resume use the YouTube player's own controls. The app adds no tap handling of its own, because catching taps would mean covering the player.
+- A video loops when it ends, like in the Shorts app.
+- No "4 of 15" counter.
 - "Refresh" button: fetch and build a new list.
 - No list yet: empty screen with a "Refresh" button. End of list: "That's it for today".
+- Pause, counter and loop decided on 2026-11-06.
 
 **Sources**
 
@@ -103,7 +107,7 @@ When a fetch fails (decided on 2026-11-06):
 | F5 | Filter by the rules and log the rejection reason | Must |
 | F6 | List of 15 videos plus a reserve | Must |
 | F7 | Feed with vertical scrolling and the official player | Must |
-| F8 | Auto-skip a video that hasn't loaded within 3 seconds, replacing it from the reserve | Must |
+| F8 | Auto-skip a video when the player reports an error (for example, it was deleted, made private or can't be embedded), replacing it from the reserve. A slow video is never skipped: the user decides, since the cause may be weak reception. Changed on 2026-11-06 (was: skip a video that hasn't loaded within 3 seconds) | Must |
 | F9 | Mark as "watched" after half the video has played | Must |
 | F10 | Preload the next video | Nice to have |
 | F11 | Status screen | Nice to have |
@@ -137,6 +141,7 @@ When a fetch fails (decided on 2026-11-06):
 
 - Maximum length: 3 minutes (180 seconds), the YouTube Shorts limit. Raised from 90 seconds on 2026-11-05, because real Shorts from the chosen channels run longer.
 - "Watched" after half a video.
+- Feed (2026-11-06): no tap-to-pause (YouTube's controls do it), no "4 of 15" counter, videos loop, and auto-skip only on a player error.
 - 2 topics only: World War II and Claude Code. Claude Code replaced Quantum Computing on 2026-11-06.
 - Keywords and blocked words are listed in `lib/topics.ts` (agreed 2026-11-06). Matching ignores case and uses whole words. Hebrew words may take a prefix letter (ה, ב, ל, ו, מ, ש, כ). Blocked words use narrow phrases such as "reacts to" instead of plain "reaction", so titles like "chain reaction" or "Churchill's reaction" aren't blocked.
 - React Native with Expo.
@@ -163,7 +168,7 @@ When a fetch fails (decided on 2026-11-06):
 | Background | Deep Sea Night | #0E2A2F | All screen backgrounds |
 | Main | Sunset | #E0533A | Primary buttons ("Refresh"), active states, progress |
 | Second | Teal Mist | #2F8F8A | Secondary buttons, topic tags, dividers |
-| Accent | Cherry Blossom | #F3C6C8 | Small highlights: the "4 of 15" counter, icons, sakura decorations |
+| Accent | Cherry Blossom | #F3C6C8 | Small highlights: the channel name under the video, icons, sakura decorations |
 | Text | Silver | #DCDFDE | Body text and titles on the background |
 
 **Contrast rules:** text on Sunset or Teal Mist buttons is Deep Sea Night and bold, not Silver (Silver on those colors is too low-contrast). Silver and Cherry Blossom are only for text on Deep Sea Night.
@@ -174,4 +179,4 @@ When a fetch fails (decided on 2026-11-06):
 - Hebrew and English text both supported; keep typography clean and simple.
 - Reference image: `assets/reference/mood.jpg` (the wandering swordsman under cherry blossoms). Use it for color and mood only, not as a UI element.
 
-**YouTube constraint:** the theme applies only around the player (overlays for channel name, title and counter). The player itself keeps YouTube's branding, controls and ads untouched (see section 8).
+**YouTube constraint:** the theme applies only around the player (the channel name and title below it). The player itself keeps YouTube's branding, controls and ads untouched (see section 8).

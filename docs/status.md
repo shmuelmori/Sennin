@@ -124,11 +124,11 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 ## Phase 7 – Real feed (F7, F8, F9, F10)
 
 - [ ] **7.1 Feed from the database** (§4)
-  Replace the spike's hard-coded IDs with `feed_item`. Add overlays (channel name, title, "4 of 15") at the bottom without covering player controls. Tap to pause and resume.
+  Replace the spike's hard-coded IDs with `feed_item`. Put the player at the top of the page, with the channel name and title in a strip below it. Videos loop. No tap-to-pause and no counter (decided 2026-11-06).
 - [ ] **7.2 Empty and end states** (§4)
   An empty screen with a "Refresh" button when there's no list, and "That's it for today" at the end of the list.
 - [ ] **7.3 Auto-skip** (F8)
-  If a video hasn't loaded within 3 s, skip it and replace it from the reserve.
+  When the player reports an error, skip the video and replace it from the reserve. A slow video is not skipped (decided 2026-11-06).
 - [ ] **7.4 Mark as watched** (F9)
   Save to `watched` once half the video has played. Watched videos don't come back in later fetches.
 - [ ] **7.5 Preload the next video** (F10, nice to have)
@@ -160,6 +160,8 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 - **Mood reference image (9.x):** spec §11 points to `assets/reference/mood.jpg`, which isn't in the repo yet.
 
 Decided on 2026-11-06:
+- **Feed behavior (Phase 7):** no tap-to-pause, because the YouTube player's own controls already pause and resume, and catching taps would mean covering the player. No "4 of 15" counter. The player sits at the top of the page, with the channel name and title in a strip below it. Videos loop when they end. Auto-skip (F8) happens only on a player error; a slow video is left for the user to skip, since the cause may be weak reception. On opening, the feed starts at the first video not yet watched or skipped. After a Refresh, it starts at video 1. Spec §4, §6, §9 and §11 are updated.
+- **Preloading (7.5):** no hidden or muted playback of neighbor videos, to stay within YouTube's policies. Only start playback when the finger lifts.
 - **Fetch failures (6.1):** a key or quota error stops the fetch. Any other error on one channel's uploads skips only that channel, and `fetch_log.error` names it. A failed fetch, or one where no video passes, keeps the current list. "New since the previous fetch" counts from the start of the last fetch with `fetched > 0`. Spec §5 and §7 are updated.
 - **Refresh button before 7.1 (6.2):** Sunset, in the Feed header next to Sources and Status. The result shows in an alert. The feed keeps playing the spike Shorts until 7.1 reads `feed_item`.
 - **Swipe to remove (5.3):** built on React Native's own `PanResponder` and `Animated`, so no gesture library is added. Swiping a row uncovers a Sunset "Remove" button, and tapping it removes the channel, so a stray swipe can't remove one. Spec §4 is updated.
