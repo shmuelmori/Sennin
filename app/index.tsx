@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
+  Alert,
   FlatList,
   type LayoutChangeEvent,
   type NativeScrollEvent,
@@ -11,6 +12,7 @@ import {
 
 import { HeaderButton } from '@/components/HeaderButton';
 import { ShortPage } from '@/components/ShortPage';
+import { useRefresh } from '@/hooks/useRefresh';
 import { useSwitchTimer } from '@/hooks/useSwitchTimer';
 import {
   fitAspect,
@@ -28,11 +30,20 @@ function logPlayerError(videoId: string, error: string) {
 
 // Feed screen (spec §4). Player spike (step 1.1): a vertical paging list of
 // hard-coded Shorts. Only the current video and its neighbors mount a player.
+// "Refresh" (step 6.2) saves a new list; the feed shows it from step 7.1.
 export default function FeedScreen() {
   const router = useRouter();
   const [pageSize, setPageSize] = useState<Size | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const switchTimer = useSwitchTimer();
+  const { refreshing, refresh } = useRefresh();
+
+  const onRefresh = async () => {
+    const result = await refresh();
+    if (result !== null) {
+      Alert.alert(result.title, result.message);
+    }
+  };
 
   const playerSize = useMemo(
     () => (pageSize ? fitAspect(pageSize, SHORT_ASPECT) : null),
@@ -76,6 +87,12 @@ export default function FeedScreen() {
           title: 'Sennin',
           headerRight: () => (
             <View style={styles.headerButtons}>
+              <HeaderButton
+                label={refreshing ? 'Refreshing…' : 'Refresh'}
+                variant="primary"
+                disabled={refreshing}
+                onPress={() => void onRefresh()}
+              />
               <HeaderButton label="Sources" onPress={() => router.push('/sources')} />
               <HeaderButton label="Status" onPress={() => router.push('/status')} />
             </View>
