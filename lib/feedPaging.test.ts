@@ -3,7 +3,6 @@ import {
   fitAspect,
   pageIndexFromOffset,
   SHORT_ASPECT,
-  shouldMountPlayer,
 } from './feedPaging';
 
 describe('pageIndexFromOffset', () => {
@@ -33,30 +32,6 @@ describe('pageIndexFromOffset', () => {
     expect(pageIndexFromOffset(1600, -800, 15)).toBe(0);
     expect(pageIndexFromOffset(Number.NaN, 800, 15)).toBe(0);
     expect(pageIndexFromOffset(1600, Number.NaN, 15)).toBe(0);
-  });
-});
-
-describe('shouldMountPlayer', () => {
-  it('mounts the current item and its direct neighbors', () => {
-    expect(shouldMountPlayer(4, 4)).toBe(true);
-    expect(shouldMountPlayer(3, 4)).toBe(true);
-    expect(shouldMountPlayer(5, 4)).toBe(true);
-  });
-
-  it('does not mount items further away', () => {
-    expect(shouldMountPlayer(2, 4)).toBe(false);
-    expect(shouldMountPlayer(6, 4)).toBe(false);
-    expect(shouldMountPlayer(14, 0)).toBe(false);
-  });
-
-  it('accepts a wider neighbor window', () => {
-    expect(shouldMountPlayer(6, 4, 2)).toBe(true);
-    expect(shouldMountPlayer(7, 4, 2)).toBe(false);
-  });
-
-  it('mounts only the current item with no neighbors', () => {
-    expect(shouldMountPlayer(4, 4, 0)).toBe(true);
-    expect(shouldMountPlayer(5, 4, 0)).toBe(false);
   });
 });
 

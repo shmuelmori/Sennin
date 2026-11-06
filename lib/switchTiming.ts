@@ -68,3 +68,15 @@ export function formatSwitchSummary(summary: SwitchSummary, skipped: number): st
     `${skipped} skipped. Target (80% under 1 s): ${verdict}`
   );
 }
+
+/** Spec §8: opening the app with an existing list takes under 2 seconds. */
+export const OPEN_TARGET_MS = 2000;
+
+/**
+ * Log line for the first video starting after the app opened. Measured from
+ * when the app's JavaScript started, so Expo Go's own startup isn't included.
+ */
+export function formatOpenLine(videoId: string, elapsedMs: number): string {
+  const verdict = elapsedMs < OPEN_TARGET_MS ? 'met' : 'not met';
+  return `[open] first video ${videoId} playing ${elapsedMs} ms after the app started. Target (under 2 s): ${verdict}`;
+}

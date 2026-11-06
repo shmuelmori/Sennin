@@ -1,4 +1,5 @@
 import {
+  formatOpenLine,
   formatSkippedLine,
   formatSwitchLine,
   formatSwitchSummary,
@@ -77,5 +78,14 @@ describe('log lines', () => {
       '[switch] 3 switches: 1 under 1 s (33%), median 1101 ms, slowest 1200 ms, ' +
         '0 skipped. Target (80% under 1 s): not met',
     );
+  });
+});
+
+describe('formatOpenLine', () => {
+  it('reports the open time and whether it met the 2 s target', () => {
+    expect(formatOpenLine('abc', 1450)).toBe(
+      '[open] first video abc playing 1450 ms after the app started. Target (under 2 s): met',
+    );
+    expect(formatOpenLine('abc', 2000)).toContain('not met');
   });
 });
