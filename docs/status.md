@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 6.1
+**Next step:** 7.1
 
 ---
 
@@ -113,11 +113,13 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 6 – Fetch pipeline (F4, F5, F6)
 
-- [ ] **6.1 Refresh hook**
+- [x] **6.1 Refresh hook** (2026-11-06, feature/fetch-pipeline)
   Runs the full §5 process: playlist items per channel → dedupe → `videos.list` → filter → sort → save 15 + reserve → write `fetch_log` (each rejected video with its rule, plus quota used).
-- [ ] **6.2 Run it for real**
+  *Result:* `runFetch` in `lib/fetchPipeline.ts` runs the process and takes the YouTube calls as a parameter, so its tests use fakes. `hooks/useRefresh.ts` reads the inputs, saves the list and `fetch_log`, and logs `[fetch]` lines. `lib/fetchMessages.ts` builds the log row, the message shown after Refresh and the terminal lines. Channels are read in parallel. A key or quota error stops the fetch; any other error skips only that channel. `getLastCompletedFetchStart` in `db/fetchLog.ts` gives the "new since" time.
+- [x] **6.2 Run it for real** (2026-11-06, feature/fetch-pipeline)
   Wire the "Refresh" button with loading and error states. Test with real channels.
   *Done when:* one fetch takes under 60 s and under 100 units (§8), and `fetch_log` shows the rejections.
+  *Result:* targets met, but with only 2 channels. The first fetch read 100 uploads, and 60 passed. All 40 rejections were from the length rule (long videos; the two logged examples ran 32 and 41 minutes). It used 4 units in 1.3 s, and saved 15 + 10. The second fetch skipped the 25 listed videos, checked 75, and saved a different 15 + 10 in 0.8 s, also for 4 units. Nothing failed the vertical rule: every video of 3 minutes or less was vertical. The keyword rule didn't run, because both channels have one topic. `fetch_log` read back with the same counts. A fetch costs 1 unit per channel plus 1 per 50 videos, so 30 channels should take about 60 units. Re-measure with the full channel list in 10.1. The same 40 long videos are checked again on every fetch. They cost no extra units, because they share the `videos.list` batches.
 
 ## Phase 7 – Real feed (F7, F8, F9, F10)
 
@@ -176,8 +178,8 @@ Decided on 2026-11-06:
 | --- | --- | --- |
 | Video switch time | < 1 s in 80% of switches | Step 1.2: 8% under 1 s (1 of 12), median 1.13 s. Not met, but the user found it good in use. |
 | App open with an existing list | < 2 s | |
-| Fetch duration | < 60 s | |
-| Fetch quota | < 100 units | |
+| Fetch duration | < 60 s | Step 6.2: 1.3 s and 0.8 s with 2 channels (100 uploads). Met, re-measure with the full channel list in 10.1. |
+| Fetch quota | < 100 units | Step 6.2: 4 units with 2 channels. About 60 expected for 30 channels. Met. |
 
 | Question (spec §1) | Answer |
 | --- | --- |
