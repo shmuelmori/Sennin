@@ -54,7 +54,7 @@ describe('summarizeSwitchTimes', () => {
 describe('log lines', () => {
   it('formats one switch', () => {
     expect(formatSwitchLine(3, 'abc', 640, 250)).toBe(
-      '[switch] #3 abc: 640 ms (page snap 250 ms)',
+      '[switch] #3 abc: 640 ms (page picked after 250 ms)',
     );
   });
 

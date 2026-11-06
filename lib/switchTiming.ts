@@ -48,9 +48,9 @@ export function formatSwitchLine(
   number: number,
   videoId: string,
   totalMs: number,
-  snapMs: number,
+  pickedMs: number,
 ): string {
-  return `[switch] #${number} ${videoId}: ${totalMs} ms (page snap ${snapMs} ms)`;
+  return `[switch] #${number} ${videoId}: ${totalMs} ms (page picked after ${pickedMs} ms)`;
 }
 
 /** Log line for a switch that was swiped away before its video started. */

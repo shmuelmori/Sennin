@@ -14,7 +14,8 @@ const appStartedAt = Date.now();
 type PendingSwitch = {
   videoId: string;
   dragEndAt: number;
-  settledAt: number;
+  /** When the feed picked the new page: early in the snap since step 7.5. */
+  pickedAt: number;
 };
 
 // Measures video switch time (spec §8, status.md step 1.2): from the moment
@@ -34,7 +35,7 @@ export function useSwitchTimer() {
     lastDragEndAt.current = Date.now();
   }, []);
 
-  /** Call when the list settles on a different video. */
+  /** Call when the feed moves to a different video. */
   const onSwitch = useCallback((videoId: string) => {
     const now = Date.now();
     const previous = pending.current;
@@ -42,7 +43,7 @@ export function useSwitchTimer() {
       skipped.current += 1;
       console.log(formatSkippedLine(previous.videoId, now - previous.dragEndAt));
     }
-    pending.current = { videoId, dragEndAt: lastDragEndAt.current ?? now, settledAt: now };
+    pending.current = { videoId, dragEndAt: lastDragEndAt.current ?? now, pickedAt: now };
   }, []);
 
   /** Call when a video reports "playing". Ignores videos that weren't just switched to. */
@@ -56,8 +57,8 @@ export function useSwitchTimer() {
     pending.current = null;
     const totalMs = Date.now() - current.dragEndAt;
     times.current.push(totalMs);
-    const snapMs = current.settledAt - current.dragEndAt;
-    console.log(formatSwitchLine(times.current.length, videoId, totalMs, snapMs));
+    const pickedMs = current.pickedAt - current.dragEndAt;
+    console.log(formatSwitchLine(times.current.length, videoId, totalMs, pickedMs));
     console.log(formatSwitchSummary(summarizeSwitchTimes(times.current), skipped.current));
   }, []);
 
