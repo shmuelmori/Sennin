@@ -32,6 +32,25 @@ export function shouldMountPlayer(
   return Math.abs(index - currentIndex) <= neighbors;
 }
 
+export type FeedPageLayout = {
+  /** The player's size. It sits at the top of the page, centered across it. */
+  player: Size;
+  /** Height of the strip under the player, for the channel name and title (§4). */
+  infoHeight: number;
+};
+
+/**
+ * Splits a feed page into the player and the strip under it. The strip gets
+ * at least `minInfoHeight`, the player the largest 9:16 size that fits above
+ * it, and any height left over goes to the strip. Nothing overlaps the player.
+ */
+export function feedPageLayout(page: Size, minInfoHeight: number): FeedPageLayout {
+  const reserved = Number.isFinite(minInfoHeight) ? Math.max(0, minInfoHeight) : 0;
+  const room = { width: page.width, height: page.height - reserved };
+  const player = room.height > 0 ? fitAspect(room, SHORT_ASPECT) : { width: 0, height: 0 };
+  return { player, infoHeight: Math.max(0, page.height - player.height) };
+}
+
 /** The largest size with the given aspect ratio that fits inside the container. */
 export function fitAspect(container: Size, aspect: Size): Size {
   if (container.width <= 0 || container.height <= 0 || aspect.width <= 0 || aspect.height <= 0) {
