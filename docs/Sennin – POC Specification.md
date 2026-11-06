@@ -86,6 +86,12 @@ The rules run in this order: live stream, length, vertical, embeddable, blocked 
 
 Quota: a fetch with 30 channels costs about 60 units out of 10,000 per day. search.list is not used.
 
+When a fetch fails (decided on 2026-11-06):
+
+- A key or quota error stops the fetch. Any other error on one channel's uploads (for example, the channel was deleted) skips that channel, and the fetch goes on with the rest. If every channel fails, the fetch fails.
+- A failed fetch, or one where no video passes the filters, keeps the current list and says so.
+- "New since the previous fetch" (step 5) means published after the last completed fetch started. A fetch is completed once `videos.list` has answered.
+
 ## 6. Functional requirements
 
 | ID | Requirement | Priority |
@@ -116,6 +122,7 @@ Quota: a fetch with 30 channels costs about 60 units out of 10,000 per day. sear
 - `feed_item.channelTitle` is saved with each video, so videos from a removed channel still show their channel name (F2). Added on 2026-11-06.
 - `feed_item.status` is `unseen`, `watched` or `skipped`.
 - `fetch_log.rejectedByRule` is a JSON list with one `{videoId, rule, detail}` per rejected video (F5). The Status screen counts them per rule. Fetch logs older than 30 days are deleted when a new fetch is saved. Decided on 2026-11-06.
+- `fetch_log.fetched` is the number of videos `videos.list` returned, which the filters then checked. It is 0 for a fetch that stopped on an error. `fetch_log.error` names the failure and any skipped channels, or is empty. Decided on 2026-11-06.
 - Times are stored as milliseconds since 1970, and true/false as 1/0.
 
 ## 8. Non-functional requirements
