@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 9.1
+**Next step:** 10.1
 
 ---
 
@@ -157,14 +157,14 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 9 – Visual polish (§11)
 
-Built on `feature/visual-polish`, waiting for the phone check below.
+The user checked all three steps on the phone with the test plan below and reported all good.
 
-- [ ] **9.1 Decorative art**
+- [x] **9.1 Decorative art** (2026-11-06, feature/visual-polish)
   Sakura, clouds and mountains on the empty and end screens only, never over the player. Calm fades.
   *Result:* one dusk scene, `assets/images/dusk.jpg` (1080x2160, 89 KB): a sakura branch from the top corner, swirling ukiyo-e clouds, a low Sunset sun, a pagoda on the far ridge, three misty ridges and a low branch in front. The middle third is plain dark sky, where the centered text sits. `components/DuskBackdrop.tsx` draws it with `resizeMode="cover"` and fades it in over 0.9 s once the image has loaded (Android's own image fade is turned off). `ScreenPlaceholder` takes a `decorated` flag, set only on the "No videos yet" and "That's it for today" screens. The "Couldn't read the list" screen stays plain. The art is a picture rather than shapes built from Views, so it could be checked by eye before going on the phone, and no new dependency (such as `react-native-svg`) was needed. The mood reference is `assets/Sennin.mp4`, already in the repo (spec §11 is updated).
-- [ ] **9.2 App icon and splash screen**
+- [x] **9.2 App icon and splash screen** (2026-11-06, feature/visual-polish)
   *Result:* `scripts/generate_art.py` (Python 3 with Pillow) draws every image from the §11 palette, seeded, so a rerun gives the same files: `icon.png`, the three adaptive icon layers (sky behind; sun, cloud, ridges and a sakura sprig in front, kept inside the safe circle; a one-color sun-over-ridges for themed icons) and `splash-icon.png` (the same motif in a round medallion). `app.json` now uses Deep Sea Night instead of the template's blue colors, with a 200 dp splash image. Expo Go shows its own launcher icon, so the icon only fully shows in a standalone build, which this POC doesn't make.
-- [ ] **9.3 Hebrew and English check**
+- [x] **9.3 Hebrew and English check** (2026-11-06, feature/visual-polish)
   Hebrew titles and channel names align correctly in the overlays and on the Sources screen.
   *Result:* found in the React Native source (`TextLayoutManager.kt`, new architecture): with no `textAlign`, Android aligns text by the app's layout direction, not by its language. On this right-to-left phone, English titles were also right-aligned, and the `ShortInfo` comment saying alignment was "left to the text" was wrong. `textDirection` in `lib/textDirection.ts` returns the direction of the first letter, the same rule Android uses to order the text (`FIRSTSTRONG_LTR`), or `null` when there is no letter. The feed's channel name and title and the Sources channel name set it as their `direction` style, so each starts on its own side. App labels (buttons, Status rows) still follow the phone. Spec §11 is updated.
 
