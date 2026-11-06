@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 7.1
+**Next step:** 7.3
 
 ---
 
@@ -123,10 +123,14 @@ The spec (§10) calls the player the highest risk: "test in the first week". Thi
 
 ## Phase 7 – Real feed (F7, F8, F9, F10)
 
-- [ ] **7.1 Feed from the database** (§4)
+- [x] **7.1 Feed from the database** (§4) (2026-11-06, feature/real-feed)
   Replace the spike's hard-coded IDs with `feed_item`. Put the player at the top of the page, with the channel name and title in a strip below it. Videos loop. No tap-to-pause and no counter (decided 2026-11-06).
-- [ ] **7.2 Empty and end states** (§4)
+  *Result:* works on the phone. `hooks/useFeed.ts` reads the list and opens on the first unwatched video (`lib/feedPages.ts`). `lib/feedPaging.ts` splits each page into the player and an info strip of at least 84 dp plus the navigation bar inset. Videos loop by seeking to 0 when they end. Nothing plays while Sources or Status is open. `lib/spikeShorts.ts` is removed.
+  - The first version created a new player (WebView) for each page near the current one, like the spike. After about 10 players, new ones never loaded: the logs showed `mounted`, then nothing (no `ready`, no page load, no crash). The spike had the same design but was only tested for 12 switches.
+  - The fix: the feed is now a paging `ScrollView` (spec §3, §10) with exactly 3 players (`components/PlayerSlot.tsx`) that sit over the current page and its neighbors. Page p always gets player p % 3 (`lib/playerSlots.ts`), so a swipe moves one player, which cues its new video in the same WebView. In a run of 32 switches, only 3 players were ever created, none stalled, and looping worked.
+- [x] **7.2 Empty and end states** (§4) (2026-11-06, feature/real-feed)
   An empty screen with a "Refresh" button when there's no list, and "That's it for today" at the end of the list.
+  *Result:* the end page works on the phone. The empty screen wasn't tested on the phone, because a list was already saved.
 - [ ] **7.3 Auto-skip** (F8)
   When the player reports an error, skip the video and replace it from the reserve. A slow video is not skipped (decided 2026-11-06).
 - [ ] **7.4 Mark as watched** (F9)
@@ -178,8 +182,8 @@ Decided on 2026-11-06:
 
 | Measure | Target | Result |
 | --- | --- | --- |
-| Video switch time | < 1 s in 80% of switches | Step 1.2: 8% under 1 s (1 of 12), median 1.13 s. Not met, but the user found it good in use. |
-| App open with an existing list | < 2 s | |
+| Video switch time | < 1 s in 80% of switches | Step 1.2: 8% under 1 s (1 of 12), median 1.13 s. Not met, but the user found it good in use. Step 7.1 (3 reused players): 41% under 1 s (13 of 32), median 1.10 s, slowest 5.9 s (one outlier). New videos took about 1.0–1.5 s, videos already played about 0.55 s. Not met. |
+| App open with an existing list | < 2 s | Step 7.1: one measurement, 2.6 s from the app's JavaScript starting to the first video playing (reading the list took 25 ms). Taken right after a fresh bundle in dev mode. Not met; re-measure in 7.6. |
 | Fetch duration | < 60 s | Step 6.2: 1.3 s and 0.8 s with 2 channels (100 uploads). Met, re-measure with the full channel list in 10.1. |
 | Fetch quota | < 100 units | Step 6.2: 4 units with 2 channels. About 60 expected for 30 channels. Met. |
 

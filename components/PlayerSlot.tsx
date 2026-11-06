@@ -1,4 +1,4 @@
-import { type ComponentType, memo, useEffect, useMemo, useRef } from 'react';
+import { type ComponentType, memo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { WebViewProps } from 'react-native-webview';
 import YoutubeIframe, {
@@ -49,8 +49,6 @@ const WEB_VIEW_PROPS: WebViewProps = {
 };
 
 type Props = {
-  /** Which reused player this is, for the logs. */
-  slot: number;
   videoId: string;
   size: Size;
   /** Where the player sits in the feed's scroll content. */
@@ -61,8 +59,6 @@ type Props = {
   onPlayerError: (videoId: string, error: string) => void;
   /** Called each time the video starts or resumes playing. */
   onPlaying: (videoId: string) => void;
-  /** TEMPORARY diagnostics for the player checks in 7.1. Remove before merging. */
-  onPlayerLog: (videoId: string, line: string) => void;
 };
 
 // One of the feed's reused players (spec §3, §10). It stays mounted and
@@ -71,7 +67,6 @@ type Props = {
 // no new WebView is created on a swipe. It sits over the empty top part of
 // a page, and nothing covers it. Pausing is left to the player's controls.
 export const PlayerSlot = memo(function PlayerSlot({
-  slot,
   videoId,
   size,
   top,
@@ -79,41 +74,10 @@ export const PlayerSlot = memo(function PlayerSlot({
   playing,
   onPlayerError,
   onPlaying,
-  onPlayerLog,
 }: Props) {
   const playerRef = useRef<YoutubeIframeRef | null>(null);
-  // The video this player shows, read by the WebView callbacks below, which
-  // are created once so the WebView never gets new props on a swipe.
-  const videoIdRef = useRef(videoId);
-
-  useEffect(() => {
-    videoIdRef.current = videoId;
-    onPlayerLog(videoId, `on player ${slot}`);
-  }, [slot, videoId, onPlayerLog]);
-
-  // TEMPORARY diagnostics: player mounts, page loads and crashes.
-  useEffect(() => {
-    onPlayerLog(videoIdRef.current, `player ${slot} created`);
-    return () => onPlayerLog(videoIdRef.current, `player ${slot} removed`);
-  }, [slot, onPlayerLog]);
-
-  const webViewProps = useMemo<WebViewProps>(
-    () => ({
-      ...WEB_VIEW_PROPS,
-      onLoadEnd: () => onPlayerLog(videoIdRef.current, `player ${slot} page loaded`),
-      onError: (e) => onPlayerLog(videoIdRef.current, `page error: ${e.nativeEvent.description}`),
-      onHttpError: (e) => onPlayerLog(videoIdRef.current, `page HTTP ${e.nativeEvent.statusCode}`),
-      onRenderProcessGone: (e) =>
-        onPlayerLog(
-          videoIdRef.current,
-          `WebView renderer gone (crashed: ${e.nativeEvent.didCrash})`,
-        ),
-    }),
-    [slot, onPlayerLog],
-  );
 
   const onChangeState = (state: PLAYER_STATES) => {
-    onPlayerLog(videoId, `state ${state}`);
     if (state === PLAYER_STATES.PLAYING) onPlaying(videoId);
     // Loop like the Shorts app (§4). Seeking from the ended state plays again.
     if (state === PLAYER_STATES.ENDED) playerRef.current?.seekTo(0, true);
@@ -129,8 +93,7 @@ export const PlayerSlot = memo(function PlayerSlot({
         play={playing}
         useLocalHTML
         baseUrlOverride={PLAYER_BASE_URL}
-        webViewProps={webViewProps}
-        onReady={() => onPlayerLog(videoId, `player ${slot} ready`)}
+        webViewProps={WEB_VIEW_PROPS}
         onError={(error) => onPlayerError(videoId, error)}
         onChangeState={onChangeState}
       />

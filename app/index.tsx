@@ -18,11 +18,6 @@ function logPlayerError(videoId: string, error: string) {
   console.warn(`[player] ${videoId}: ${error}`);
 }
 
-// TEMPORARY diagnostics for the player checks in 7.1. Remove before merging.
-function logPlayer(videoId: string, line: string) {
-  console.log(`[player] ${videoId}: ${line}`);
-}
-
 /** The page on screen, tied to the list it belongs to. */
 type Position = { version: number; index: number };
 
@@ -103,7 +98,6 @@ export default function FeedScreen() {
         onDragEnd={switchTimer.onDragEnd}
         onPlayerError={logPlayerError}
         onPlaying={switchTimer.onPlaying}
-        onPlayerLog={logPlayer}
       />
     );
   }

@@ -29,8 +29,6 @@ type Props = {
   onDragEnd: () => void;
   onPlayerError: (videoId: string, error: string) => void;
   onPlaying: (videoId: string) => void;
-  /** TEMPORARY diagnostics for the player checks in 7.1. */
-  onPlayerLog: (videoId: string, line: string) => void;
 };
 
 // The vertical paging feed (§3, §4, F7): one video per page, then the
@@ -50,7 +48,6 @@ export function FeedPager({
   onDragEnd,
   onPlayerError,
   onPlaying,
-  onPlayerLog,
 }: Props) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const openedAtStart = useRef(false);
@@ -107,7 +104,6 @@ export function FeedPager({
         return (
           <PlayerSlot
             key={`player-${slot}`}
-            slot={slot}
             videoId={page.item.videoId}
             size={layout.player}
             top={pageIndex * pageSize.height}
@@ -115,7 +111,6 @@ export function FeedPager({
             playing={active && pageIndex === currentIndex}
             onPlayerError={onPlayerError}
             onPlaying={onPlaying}
-            onPlayerLog={onPlayerLog}
           />
         );
       })}
