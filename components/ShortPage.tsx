@@ -1,9 +1,14 @@
-import { type ComponentType, memo } from 'react';
+import { type ComponentType, memo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { WebViewProps } from 'react-native-webview';
-import YoutubeIframe, { PLAYER_STATES, type YoutubeIframeProps } from 'react-native-youtube-iframe';
+import YoutubeIframe, {
+  PLAYER_STATES,
+  type YoutubeIframeProps,
+  type YoutubeIframeRef,
+} from 'react-native-youtube-iframe';
 
-import type { Size } from '@/lib/feedPaging';
+import { ShortInfo } from '@/components/ShortInfo';
+import type { FeedPageLayout, Size } from '@/lib/feedPaging';
 import { colors } from '@/theme';
 
 // The library types its component as React.VFC, which React 19's types no
@@ -46,45 +51,69 @@ const WEB_VIEW_PROPS: WebViewProps = {
 
 type Props = {
   videoId: string;
+  channelTitle: string;
+  title: string;
   pageSize: Size;
-  playerSize: Size;
+  layout: FeedPageLayout;
+  /** Space kept free at the bottom for the system navigation bar. */
+  bottomInset: number;
   /** Mount a player. True only for the current video and its neighbors. */
   mountPlayer: boolean;
-  /** Play the video. True only for the current video. */
+  /** Play the video. True only for the current video while the Feed is on screen. */
   playing: boolean;
   onPlayerError: (videoId: string, error: string) => void;
   /** Called each time the video starts or resumes playing. */
   onPlaying: (videoId: string) => void;
 };
 
-// One full-screen page of the feed. Off-window pages render an empty page,
-// so the list never holds more than three players.
+// One full-screen page of the feed: the player at the top and the channel
+// name and title below it (§4). Off-window pages render no player, so the
+// list never holds more than three. Pausing is left to the player's own
+// controls; nothing here covers the player.
 export const ShortPage = memo(function ShortPage({
   videoId,
+  channelTitle,
+  title,
   pageSize,
-  playerSize,
+  layout,
+  bottomInset,
   mountPlayer,
   playing,
   onPlayerError,
   onPlaying,
 }: Props) {
+  const playerRef = useRef<YoutubeIframeRef | null>(null);
+
+  const onChangeState = (state: PLAYER_STATES) => {
+    if (state === PLAYER_STATES.PLAYING) onPlaying(videoId);
+    // Loop like the Shorts app (§4). Seeking from the ended state plays again.
+    if (state === PLAYER_STATES.ENDED) playerRef.current?.seekTo(0, true);
+  };
+
   return (
     <View style={[styles.page, pageSize]}>
-      {mountPlayer ? (
-        <YoutubePlayer
-          videoId={videoId}
-          width={playerSize.width}
-          height={playerSize.height}
-          play={playing}
-          useLocalHTML
-          baseUrlOverride={PLAYER_BASE_URL}
-          webViewProps={WEB_VIEW_PROPS}
-          onError={(error) => onPlayerError(videoId, error)}
-          onChangeState={(state) => {
-            if (state === PLAYER_STATES.PLAYING) onPlaying(videoId);
-          }}
-        />
-      ) : null}
+      <View style={[styles.playerBox, layout.player]}>
+        {mountPlayer ? (
+          <YoutubePlayer
+            ref={playerRef}
+            videoId={videoId}
+            width={layout.player.width}
+            height={layout.player.height}
+            play={playing}
+            useLocalHTML
+            baseUrlOverride={PLAYER_BASE_URL}
+            webViewProps={WEB_VIEW_PROPS}
+            onError={(error) => onPlayerError(videoId, error)}
+            onChangeState={onChangeState}
+          />
+        ) : null}
+      </View>
+      <ShortInfo
+        channelTitle={channelTitle}
+        title={title}
+        height={layout.infoHeight}
+        bottomInset={bottomInset}
+      />
     </View>
   );
 });
@@ -92,7 +121,9 @@ export const ShortPage = memo(function ShortPage({
 const styles = StyleSheet.create({
   page: {
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: colors.deepSeaNight,
+  },
+  playerBox: {
     backgroundColor: colors.deepSeaNight,
   },
 });

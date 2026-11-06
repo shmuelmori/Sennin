@@ -86,15 +86,22 @@ async function logStoredRejections(db: SQLiteDatabase): Promise<void> {
   }
 }
 
-async function refreshFeed(db: SQLiteDatabase): Promise<FetchMessage> {
+export type RefreshResult = {
+  /** The message to show the user. */
+  message: FetchMessage;
+  /** Whether a new list was saved, so the feed should read it. */
+  listReplaced: boolean;
+};
+
+async function refreshFeed(db: SQLiteDatabase): Promise<RefreshResult> {
   const startedAtMs = Date.now();
   const input = await readInput(db, startedAtMs);
   if (input === null) {
-    return READ_FAILED_MESSAGE;
+    return { message: READ_FAILED_MESSAGE, listReplaced: false };
   }
   if (input.channels.length === 0) {
     log('no channels, nothing to fetch');
-    return NO_CHANNELS_MESSAGE;
+    return { message: NO_CHANNELS_MESSAGE, listReplaced: false };
   }
   log(`started with ${input.channels.length} channels`);
 
@@ -112,7 +119,10 @@ async function refreshFeed(db: SQLiteDatabase): Promise<FetchMessage> {
     await logStoredRejections(db);
   }
 
-  return saveError === null ? describeFetchOutcome(outcome) : SAVE_FAILED_MESSAGE;
+  if (saveError !== null) {
+    return { message: SAVE_FAILED_MESSAGE, listReplaced: false };
+  }
+  return { message: describeFetchOutcome(outcome), listReplaced: replacesList(outcome) };
 }
 
 export function useRefresh() {
@@ -120,8 +130,8 @@ export function useRefresh() {
   const [refreshing, setRefreshing] = useState(false);
   const running = useRef(false);
 
-  /** Runs one fetch and returns the message to show, or null if a fetch is already running. */
-  const refresh = useCallback(async (): Promise<FetchMessage | null> => {
+  /** Runs one fetch and returns its result, or null if a fetch is already running. */
+  const refresh = useCallback(async (): Promise<RefreshResult | null> => {
     if (running.current) return null;
     running.current = true;
     setRefreshing(true);

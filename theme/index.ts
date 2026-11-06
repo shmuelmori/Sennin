@@ -31,6 +31,14 @@ export const radius = {
   pill: 999,
 } as const;
 
+export const sizes = {
+  /**
+   * Smallest height of the strip under a feed video (padding, one line of
+   * channel name, two lines of title), not counting the bottom inset.
+   */
+  feedInfoMinHeight: 84,
+} as const;
+
 export const fontSize = {
   small: 14,
   body: 16,
