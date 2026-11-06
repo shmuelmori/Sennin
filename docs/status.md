@@ -10,7 +10,7 @@ The POC build plan, split into steps. The spec (`docs/Sennin – POC Specificati
 - If a step changes a decision, update the spec in the same branch.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next step:** 10.1
+**Next step:** 10.1 (in progress on `chore/poc-wrap-up`: waiting for the phone measurements)
 
 ---
 
@@ -179,6 +179,14 @@ The user checked all three steps on the phone with the test plan below and repor
 
 - [ ] **10.1 Final measurements and answers**
   Re-run every §8 target on the phone, then answer the four questions in spec §1 under "POC results" below.
+
+  *Phone test plan (Expo Go, `npx expo start --no-dev --minify`, closer to real use than dev mode):*
+  1. Channels: add the full channel list in Sources, covering both topics. Put at least one channel in both topics, so the keyword rule runs for the first time. Add a Hebrew channel if there is one.
+  2. Fetch: tap Refresh once. Copy the `[fetch]` lines (channels read, uploads, passed and rejected, units and seconds, and the line for each rule). Open Status and check that it shows the same numbers. Targets: under 60 s, under 100 units.
+  3. Relevance (question 2): swipe through all 15 videos. For each one, note whether it is on topic and whether it is a real Short (vertical, short). Note any that shouldn't be there and any rejection that looks wrong in the rule lines.
+  4. Switching (question 3): about 30 swipes, both directions, at a normal pace. Copy the last `[switch] … switches: …` summary line.
+  5. Opening: close Expo Go fully and reopen it 3 times with the list saved. Copy the `[open] … ms` line each time. Target: under 2 s.
+  6. Anything else seen along the way: player errors, auto-skips, crashes, a video that never started.
 
 ---
 
