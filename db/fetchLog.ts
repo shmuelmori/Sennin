@@ -33,6 +33,19 @@ export async function insertFetchLog(db: SQLiteDatabase, log: NewFetchLog): Prom
   });
 }
 
+/**
+ * When the last completed fetch started, or null if none did. Videos published
+ * after it count as new (§5 step 5). A fetch counts as completed once
+ * videos.list answered: one that stopped on an error, or found nothing new to
+ * check, has fetched = 0.
+ */
+export async function getLastCompletedFetchStart(db: SQLiteDatabase): Promise<number | null> {
+  const row = await db.getFirstAsync<{ startedAt: number }>(
+    'SELECT startedAt FROM fetch_log WHERE fetched > 0 ORDER BY id DESC LIMIT 1',
+  );
+  return row?.startedAt ?? null;
+}
+
 /** The most recent fetch, or null if there was none. */
 export async function getLatestFetchLog(db: SQLiteDatabase): Promise<FetchLog | null> {
   const row = await db.getFirstAsync<FetchLogRow>(

@@ -2,7 +2,12 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import type { NewFetchLog } from '@/lib/records';
 
-import { FETCH_LOG_MAX_AGE_MS, getLatestFetchLog, insertFetchLog } from './fetchLog';
+import {
+  FETCH_LOG_MAX_AGE_MS,
+  getLastCompletedFetchStart,
+  getLatestFetchLog,
+  insertFetchLog,
+} from './fetchLog';
 import { initDatabase } from './schema';
 import { openTestDatabase } from './testDatabase';
 
@@ -87,5 +92,30 @@ describe('insertFetchLog and getLatestFetchLog', () => {
     await insertFetchLog(db, log(100));
     await db.runAsync("UPDATE fetch_log SET rejectedByRule = 'oops'");
     await expect(getLatestFetchLog(db)).rejects.toThrow('unreadable rejectedByRule');
+  });
+});
+
+describe('getLastCompletedFetchStart', () => {
+  it('returns null before the first fetch', async () => {
+    expect(await getLastCompletedFetchStart(db)).toBeNull();
+  });
+
+  it('returns the start of the latest fetch that checked videos', async () => {
+    await insertFetchLog(db, log(100));
+    await insertFetchLog(db, log(200));
+    expect(await getLastCompletedFetchStart(db)).toBe(200);
+  });
+
+  it('skips fetches that checked no videos, such as failed ones', async () => {
+    await insertFetchLog(db, log(100));
+    await insertFetchLog(db, { ...log(200), fetched: 0, rejected: [], error: 'failed: quota' });
+    await insertFetchLog(db, { ...log(300), fetched: 0, rejected: [] });
+    expect(await getLastCompletedFetchStart(db)).toBe(100);
+  });
+
+  it('counts a fetch that skipped a channel but checked videos', async () => {
+    await insertFetchLog(db, log(100));
+    await insertFetchLog(db, { ...log(200), error: 'skipped Gone (UCgone): notFound' });
+    expect(await getLastCompletedFetchStart(db)).toBe(200);
   });
 });
