@@ -12,7 +12,12 @@ import { PlayerSlot } from '@/components/PlayerSlot';
 import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
 import { ShortPage } from '@/components/ShortPage';
 import { feedPageKey, type FeedPage } from '@/lib/feedPages';
-import { type FeedPageLayout, pageIndexFromOffset, type Size } from '@/lib/feedPaging';
+import {
+  type FeedPageLayout,
+  pageIndexFromOffset,
+  type Size,
+  snapTargetIndex,
+} from '@/lib/feedPaging';
 import { assignSlots } from '@/lib/playerSlots';
 
 type Props = {
@@ -28,14 +33,16 @@ type Props = {
   onPageChange: (index: number) => void;
   onDragEnd: () => void;
   onPlayerError: (videoId: string, error: string) => void;
-  onPlaying: (videoId: string) => void;
+  onPlaybackChange: (videoId: string, playing: boolean) => void;
 };
 
 // The vertical paging feed (§3, §4, F7): one video per page, then the
 // "That's it for today" page. The pages themselves hold no player. Three
 // players (lib/playerSlots.ts) sit over the current page and its neighbors,
 // and move to new pages as you swipe, so the feed never creates more than
-// three WebViews. Only the current video plays.
+// three WebViews. Only the current video plays. The next page is chosen as
+// soon as the snap starts moving after the finger lifts (step 7.5), so its
+// video starts while the page is still sliding in.
 export function FeedPager({
   pages,
   pageSize,
@@ -47,10 +54,12 @@ export function FeedPager({
   onPageChange,
   onDragEnd,
   onPlayerError,
-  onPlaying,
+  onPlaybackChange,
 }: Props) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const openedAtStart = useRef(false);
+  // Where the finger let go, until the snap's first movement picks the page.
+  const releaseOffset = useRef<number | null>(null);
   const videoCount = pages.filter((page) => page.kind === 'video').length;
   const playerLeft = (pageSize.width - layout.player.width) / 2;
 
@@ -63,7 +72,27 @@ export function FeedPager({
     }
   };
 
+  const onScrollBeginDrag = () => {
+    releaseOffset.current = null;
+  };
+
+  const onScrollEndDrag = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    releaseOffset.current = event.nativeEvent.contentOffset.y;
+    onDragEnd();
+  };
+
+  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (releaseOffset.current === null) return;
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const index = snapTargetIndex(releaseOffset.current, offsetY, pageSize.height, pages.length);
+    if (index === null) return;
+    releaseOffset.current = null;
+    if (index !== currentIndex) onPageChange(index);
+  };
+
+  // Where the list really settled. Corrects the early pick if it was wrong.
   const onMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    releaseOffset.current = null;
     const offsetY = event.nativeEvent.contentOffset.y;
     const index = pageIndexFromOffset(offsetY, pageSize.height, pages.length);
     if (index !== currentIndex) onPageChange(index);
@@ -76,7 +105,10 @@ export function FeedPager({
       pagingEnabled
       showsVerticalScrollIndicator={false}
       onContentSizeChange={onContentSizeChange}
-      onScrollEndDrag={onDragEnd}
+      scrollEventThrottle={16}
+      onScroll={onScroll}
+      onScrollBeginDrag={onScrollBeginDrag}
+      onScrollEndDrag={onScrollEndDrag}
       onMomentumScrollEnd={onMomentumScrollEnd}
     >
       {pages.map((page) =>
@@ -110,7 +142,7 @@ export function FeedPager({
             left={playerLeft}
             playing={active && pageIndex === currentIndex}
             onPlayerError={onPlayerError}
-            onPlaying={onPlaying}
+            onPlaybackChange={onPlaybackChange}
           />
         );
       })}
