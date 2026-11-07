@@ -43,3 +43,6 @@ yarn-error.*
 
 # TypeScript
 *.tsbuildinfo
+
+# Editor settings (personal)
+.vscode/
