@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDatabase } from '@/db/DatabaseProvider';
 import { getFeedItems, skipFeedItem } from '@/db/feed';
 import { recordWatched } from '@/db/watched';
+import { useFeedListSignal } from '@/hooks/FeedListSignal';
 import { useWatchProgress } from '@/hooks/useWatchProgress';
 import { applySkip, formatSkipLine, isSkipError, planSkip } from '@/lib/autoSkip';
 import { feedVideos, startPageIndex } from '@/lib/feedPages';
@@ -13,7 +14,8 @@ import { formatWatchedLine, markItemWatched } from '@/lib/watchProgress';
 // The saved list for the Feed screen (steps 7.1, 7.3 and 7.4): reads
 // feed_item, picks the page to open on, replaces a video that can't play with
 // one from the reserve (F8), and saves a video as watched once half of it has
-// played (F9). Logs [feed], [skip] and [watched] lines.
+// played (F9). Reads the list again when a Refresh on the Refresh tab saves
+// a new one. Logs [feed], [skip] and [watched] lines.
 
 export type FeedState =
   | { kind: 'loading' }
@@ -114,6 +116,16 @@ export function useFeed() {
     resetWatch();
     show(await readFeed(db));
   }, [db, show, resetWatch]);
+
+  // A Refresh saved a new list. Compared with the count when the Feed first
+  // mounted, so a list saved before the Feed tab opened isn't read twice.
+  const { savedCount } = useFeedListSignal();
+  const seenCount = useRef(savedCount);
+  useEffect(() => {
+    if (savedCount === seenCount.current) return;
+    seenCount.current = savedCount;
+    void reload();
+  }, [savedCount, reload]);
 
   /**
    * Call when a player reports an error. If the video can never play here,

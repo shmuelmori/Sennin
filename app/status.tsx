@@ -1,5 +1,5 @@
-import { Stack } from 'expo-router';
 import { ScrollView, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Divider } from '@/components/Divider';
 import { StatusRows } from '@/components/StatusRows';
@@ -15,7 +15,7 @@ function FetchDetails({ state }: { state: StatusState }) {
     case 'ready': {
       const { report } = state;
       if (!report.hasFetch) {
-        return <Text style={styles.note}>No fetch yet. Tap Refresh on the Feed.</Text>;
+        return <Text style={styles.note}>No fetch yet. Open Refresh to build a list.</Text>;
       }
       return (
         <>
@@ -49,14 +49,13 @@ export default function StatusScreen() {
   const { state, apiKey } = useStatus();
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Status' }} />
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.screen} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content}>
         <FetchDetails state={state} />
         <Divider />
         <StatusRows heading="YouTube API key" rows={[{ label: 'Key', value: apiKey }]} />
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 

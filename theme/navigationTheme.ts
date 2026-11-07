@@ -2,8 +2,8 @@ import { DarkTheme } from 'expo-router';
 
 import { colors } from './index';
 
-// Colors the header, screen backgrounds and transitions with the §11 palette,
-// so no screen flashes white between navigations.
+// Colors the tab bar, screen backgrounds and transitions with the §11
+// palette, so no screen flashes white between tabs.
 export const navigationTheme: typeof DarkTheme = {
   ...DarkTheme,
   colors: {

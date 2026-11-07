@@ -42,7 +42,7 @@ Questions the POC answers:
 
 ## 4. Screens
 
-**Navigation:** a stack with Feed as the home screen. Sources and Status open from buttons in the Feed's header, and Back returns to the Feed. No tab bar, so the feed keeps the full screen height.
+**Navigation:** five tabs with a bottom bar on every screen, in this order: Feed, Status, Sources, Refresh, Home. The app opens on Home. Each tab button has an icon (`@expo/vector-icons`, Ionicons) and a short English label; the open tab's button is Sunset, the others Silver. No screen has a header, so the Feed gets the full height between the status bar and the tab bar. Tabs switch with a fade, and Android's Back goes to the previously opened tab. Only the Feed plays video, and it pauses while another tab is open. Decided on 2026-11-07, replacing the earlier stack with header buttons.
 
 **Feed**
 
@@ -51,8 +51,8 @@ Questions the POC answers:
 - Pause and resume use the YouTube player's own controls. The app adds no tap handling of its own, because catching taps would mean covering the player.
 - A video loops when it ends, like in the Shorts app.
 - No "4 of 15" counter.
-- "Refresh" button: fetch and build a new list.
-- No list yet: empty screen with a "Refresh" button. End of list: "That's it for today".
+- No Refresh button on the Feed: Refresh is its own tab (decided 2026-11-07). A list saved there opens at its first video the next time the Feed is shown.
+- No list yet: empty screen with an "Open Refresh" button that switches to the Refresh tab. End of list: "That's it for today".
 - Pause, counter and loop decided on 2026-11-06.
 
 **Sources**

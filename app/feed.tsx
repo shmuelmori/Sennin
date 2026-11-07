@@ -1,14 +1,12 @@
-import { Stack, useIsFocused, useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
-import { Alert, type LayoutChangeEvent, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { type LayoutChangeEvent, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FeedPager } from '@/components/FeedPager';
-import { HeaderButton } from '@/components/HeaderButton';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
 import { useFeed } from '@/hooks/useFeed';
-import { useRefresh } from '@/hooks/useRefresh';
 import { useSwitchTimer } from '@/hooks/useSwitchTimer';
 import { toFeedPages } from '@/lib/feedPages';
 import { feedPageLayout, type Size } from '@/lib/feedPaging';
@@ -20,18 +18,16 @@ type Position = { version: number; index: number };
 // Feed screen (spec §4, steps 7.1 to 7.5): the saved list from feed_item as
 // a vertical paging feed, opening on the first unwatched video. A video that
 // can't play is replaced from the reserve (F8), and one that has played for
-// half its length is saved as watched (F9). "Refresh"
-// builds a new list and the feed starts over at its first video. Nothing
-// plays while Sources or Status covers the Feed.
+// half its length is saved as watched (F9). A Refresh on the Refresh tab
+// saves a new list, and the feed starts over at its first video. Nothing
+// plays while another tab is open.
 export default function FeedScreen() {
   const router = useRouter();
   const focused = useIsFocused();
-  const insets = useSafeAreaInsets();
   const [pageSize, setPageSize] = useState<Size | null>(null);
   const [position, setPosition] = useState<Position | null>(null);
   const switchTimer = useSwitchTimer();
-  const { refreshing, refresh } = useRefresh();
-  const { state, reload, onPlayerError, onPlaybackChange } = useFeed();
+  const { state, onPlayerError, onPlaybackChange } = useFeed();
   const { onPlaying } = switchTimer;
 
   const onPlayerStateChange = useCallback(
@@ -42,20 +38,16 @@ export default function FeedScreen() {
     [onPlaying, onPlaybackChange],
   );
 
-  const onRefresh = async () => {
-    const result = await refresh();
-    if (result === null) return;
-    if (result.listReplaced) await reload();
-    Alert.alert(result.message.title, result.message.message);
-  };
-
+  // The tab bar sits below the feed and keeps clear of Android's navigation
+  // bar itself, so the info strip needs no bottom inset.
   const layout = useMemo(
-    () => (pageSize ? feedPageLayout(pageSize, sizes.feedInfoMinHeight + insets.bottom) : null),
-    [pageSize, insets.bottom],
+    () => (pageSize ? feedPageLayout(pageSize, sizes.feedInfoMinHeight) : null),
+    [pageSize],
   );
   const pages = useMemo(() => (state.kind === 'ready' ? toFeedPages(state.videos) : []), [state]);
 
-  // Each page is exactly as tall as the list, so paging snaps one video at a time.
+  // Each page is exactly as tall as the area between the status bar and the
+  // tab bar, so paging snaps one video at a time.
   const onLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     setPageSize((prev) =>
@@ -76,14 +68,10 @@ export default function FeedScreen() {
       <ScreenPlaceholder
         decorated
         title="No videos yet"
-        lines={['Tap Refresh to build a list of Shorts.']}
+        lines={['Open Refresh to build a list of Shorts.']}
       >
         <View style={styles.emptyButton}>
-          <PrimaryButton
-            label={refreshing ? 'Refreshing…' : 'Refresh'}
-            disabled={refreshing}
-            onPress={() => void onRefresh()}
-          />
+          <PrimaryButton label="Open Refresh" onPress={() => router.navigate('/refresh')} />
         </View>
       </ScreenPlaceholder>
     );
@@ -103,7 +91,7 @@ export default function FeedScreen() {
         pages={pages}
         pageSize={pageSize}
         layout={layout}
-        bottomInset={insets.bottom}
+        bottomInset={0}
         initialIndex={state.startIndex}
         currentIndex={currentIndex}
         active={focused}
@@ -116,39 +104,21 @@ export default function FeedScreen() {
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: 'Sennin',
-          headerRight: () => (
-            <View style={styles.headerButtons}>
-              <HeaderButton
-                label={refreshing ? 'Refreshing…' : 'Refresh'}
-                variant="primary"
-                disabled={refreshing}
-                onPress={() => void onRefresh()}
-              />
-              <HeaderButton label="Sources" onPress={() => router.push('/sources')} />
-              <HeaderButton label="Status" onPress={() => router.push('/status')} />
-            </View>
-          ),
-        }}
-      />
+    <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.container} onLayout={onLayout}>
         {body}
       </View>
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.deepSeaNight,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  container: {
+    flex: 1,
   },
   emptyButton: {
     marginTop: spacing.md,

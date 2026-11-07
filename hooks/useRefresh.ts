@@ -6,6 +6,7 @@ import { useDatabase } from '@/db/DatabaseProvider';
 import { getFeedItems, replaceFeed } from '@/db/feed';
 import { getLastCompletedFetchStart, getLatestFetchLog, insertFetchLog } from '@/db/fetchLog';
 import { getWatchedIds } from '@/db/watched';
+import { useFeedListSignal } from '@/hooks/FeedListSignal';
 import {
   describeFetchOutcome,
   type FetchMessage,
@@ -24,7 +25,8 @@ import { createYoutubeClient } from '@/services/youtube';
 // watched videos and the current list, runs the §5 fetch, saves the new list
 // and writes fetch_log. If the fetch fails or finds nothing, the list stays.
 // Every fetch logs [fetch] lines to the Expo terminal: counts, units, time,
-// and the rejections per rule read back from fetch_log.
+// and the rejections per rule read back from fetch_log. A saved list is
+// announced through FeedListSignal, so the Feed tab reads it.
 
 function log(line: string) {
   console.log(`[fetch] ${line}`);
@@ -129,6 +131,7 @@ export function useRefresh() {
   const db = useDatabase();
   const [refreshing, setRefreshing] = useState(false);
   const running = useRef(false);
+  const { markListSaved } = useFeedListSignal();
 
   /** Runs one fetch and returns its result, or null if a fetch is already running. */
   const refresh = useCallback(async (): Promise<RefreshResult | null> => {
@@ -136,12 +139,14 @@ export function useRefresh() {
     running.current = true;
     setRefreshing(true);
     try {
-      return await refreshFeed(db);
+      const result = await refreshFeed(db);
+      if (result.listReplaced) markListSaved();
+      return result;
     } finally {
       running.current = false;
       setRefreshing(false);
     }
-  }, [db]);
+  }, [db, markListSaved]);
 
   return { refreshing, refresh };
 }
