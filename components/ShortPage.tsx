@@ -10,29 +10,15 @@ type Props = {
   title: string;
   pageSize: Size;
   layout: FeedPageLayout;
-  /** Space kept free at the bottom for the system navigation bar. */
-  bottomInset: number;
 };
 
-// One full-screen page of the feed (§4): an empty space at the top, where
-// one of the reused players (PlayerSlot) sits when the page is near the
-// current one, and the channel name and title below it.
-export const ShortPage = memo(function ShortPage({
-  channelTitle,
-  title,
-  pageSize,
-  layout,
-  bottomInset,
-}: Props) {
+// One full-screen page of the feed (§4): the channel name and title in a
+// strip at the top, and an empty space below it, where one of the reused
+// players (PlayerSlot) sits when the page is near the current one.
+export const ShortPage = memo(function ShortPage({ channelTitle, title, pageSize, layout }: Props) {
   return (
     <View style={[styles.page, pageSize]}>
-      <View style={{ height: layout.player.height }} />
-      <ShortInfo
-        channelTitle={channelTitle}
-        title={title}
-        height={layout.infoHeight}
-        bottomInset={bottomInset}
-      />
+      <ShortInfo channelTitle={channelTitle} title={title} height={layout.infoHeight} />
     </View>
   );
 });

@@ -8,7 +8,7 @@ export const colors = {
   sunset: '#E0533A',
   /** Secondary buttons, topic tags, dividers. Text on it: deepSeaNight, bold. */
   tealMist: '#2F8F8A',
-  /** Small highlights: the channel name under the video, icons, sakura. As text, only on deepSeaNight. */
+  /** Small highlights: the channel name above the video, icons, sakura. As text, only on deepSeaNight. */
   cherryBlossom: '#F3C6C8',
   /** Body text and titles. Only on deepSeaNight. */
   silver: '#DCDFDE',
@@ -33,8 +33,8 @@ export const radius = {
 
 export const sizes = {
   /**
-   * Smallest height of the strip under a feed video (padding, one line of
-   * channel name, two lines of title), not counting the bottom inset.
+   * Smallest height of the strip above a feed video (padding, one line of
+   * channel name, two lines of title).
    */
   feedInfoMinHeight: 84,
 } as const;

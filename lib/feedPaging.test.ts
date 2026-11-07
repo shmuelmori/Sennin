@@ -80,24 +80,34 @@ describe('feedPageLayout', () => {
     expect(layout.infoHeight).toBe(160);
   });
 
-  it('always adds up to the page height', () => {
+  it('puts the player right under the strip', () => {
+    const layout = feedPageLayout({ width: 412, height: 800 }, 100);
+    expect(layout.playerTop).toBe(100);
+    expect(feedPageLayout({ width: 360, height: 800 }, 100).playerTop).toBe(160);
+  });
+
+  it('always adds up to the page height, with the player inside the page', () => {
     for (const minInfo of [0, 50, 84, 120]) {
       const layout = feedPageLayout({ width: 411.4, height: 781.3 }, minInfo);
       expect(layout.player.height + layout.infoHeight).toBeCloseTo(781.3);
       expect(layout.infoHeight).toBeGreaterThanOrEqual(minInfo);
+      expect(layout.playerTop).toBe(layout.infoHeight);
+      expect(layout.playerTop + layout.player.height).toBeCloseTo(781.3);
     }
   });
 
   it('treats a negative or bad minimum as no minimum', () => {
     const full = { width: 360, height: 640 };
-    expect(feedPageLayout(full, -20)).toEqual({ player: full, infoHeight: 0 });
-    expect(feedPageLayout(full, Number.NaN)).toEqual({ player: full, infoHeight: 0 });
+    const expected = { infoHeight: 0, player: full, playerTop: 0 };
+    expect(feedPageLayout(full, -20)).toEqual(expected);
+    expect(feedPageLayout(full, Number.NaN)).toEqual(expected);
   });
 
   it('gives the whole page to the strip when there is no room for a player', () => {
     expect(feedPageLayout({ width: 412, height: 80 }, 100)).toEqual({
-      player: { width: 0, height: 0 },
       infoHeight: 80,
+      player: { width: 0, height: 0 },
+      playerTop: 80,
     });
   });
 });

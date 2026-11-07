@@ -46,7 +46,7 @@ Questions the POC answers:
 
 **Feed**
 
-- Full-screen video at the top of the page, with the channel name and title in a strip below it, so nothing covers the player.
+- The channel name and title in a strip at the top of the page, and the video below it (the largest 9:16 size that fits, down to the tab bar). The strip ends where the player starts, so nothing covers the player. Moved from below the player on 2026-11-08.
 - Swipe up: next video. Swipe down: previous video.
 - Pause and resume use the YouTube player's own controls. The app adds no tap handling of its own, because catching taps would mean covering the player.
 - A video loops when it ends, like in the Shorts app.
@@ -174,7 +174,7 @@ When a fetch fails (decided on 2026-11-06):
 | Background | Deep Sea Night | #0E2A2F | All screen backgrounds |
 | Main | Sunset | #E0533A | Primary buttons ("Refresh"), active states, progress |
 | Second | Teal Mist | #2F8F8A | Secondary buttons, topic tags, dividers |
-| Accent | Cherry Blossom | #F3C6C8 | Small highlights: the channel name under the video, icons, sakura decorations |
+| Accent | Cherry Blossom | #F3C6C8 | Small highlights: the channel name above the video, icons, sakura decorations |
 | Text | Silver | #DCDFDE | Body text and titles on the background |
 
 **Contrast rules:** text on Sunset or Teal Mist buttons is Deep Sea Night and bold, not Silver (Silver on those colors is too low-contrast). Silver and Cherry Blossom are only for text on Deep Sea Night.
@@ -186,4 +186,4 @@ When a fetch fails (decided on 2026-11-06):
 - Reference image: `assets/Sennin.mp4` (a short clip of the wandering swordsman under cherry blossoms; it replaces the planned `mood.jpg`). Use it for color and mood only, not as a UI element.
 - Decorative art (2026-11-06): one dusk scene (`assets/images/dusk.jpg`) with sakura branches, swirling clouds, misty ridges, a pagoda and a low sun, behind the empty and end screens only. It fades in once loaded. Its middle third is plain dark sky, where the text sits. The app icon and splash use the same motif (sun, ridges, a sakura sprig). All of it is drawn by `scripts/generate_art.py` from the palette above, so rerun the script after a palette change.
 
-**YouTube constraint:** the theme applies only around the player (the channel name and title below it). The player itself keeps YouTube's branding, controls and ads untouched (see section 8).
+**YouTube constraint:** the theme applies only around the player (the channel name and title in the strip above it). The player itself keeps YouTube's branding, controls and ads untouched (see section 8).

@@ -48,22 +48,26 @@ export function snapTargetIndex(
 }
 
 export type FeedPageLayout = {
-  /** The player's size. It sits at the top of the page, centered across it. */
-  player: Size;
-  /** Height of the strip under the player, for the channel name and title (§4). */
+  /** Height of the strip at the top of the page, for the channel name and title (§4). */
   infoHeight: number;
+  /** The player's size. It sits right under the strip, centered across the page. */
+  player: Size;
+  /** Distance from the top of the page to the player: the strip's height. */
+  playerTop: number;
 };
 
 /**
- * Splits a feed page into the player and the strip under it. The strip gets
- * at least `minInfoHeight`, the player the largest 9:16 size that fits above
- * it, and any height left over goes to the strip. Nothing overlaps the player.
+ * Splits a feed page into the strip on top and the player below it. The
+ * strip gets at least `minInfoHeight`, the player the largest 9:16 size that
+ * fits under it, and any height left over goes to the strip. The two add up
+ * to the page height, so the strip never overlaps the player.
  */
 export function feedPageLayout(page: Size, minInfoHeight: number): FeedPageLayout {
   const reserved = Number.isFinite(minInfoHeight) ? Math.max(0, minInfoHeight) : 0;
   const room = { width: page.width, height: page.height - reserved };
   const player = room.height > 0 ? fitAspect(room, SHORT_ASPECT) : { width: 0, height: 0 };
-  return { player, infoHeight: Math.max(0, page.height - player.height) };
+  const infoHeight = Math.max(0, page.height - player.height);
+  return { infoHeight, player, playerTop: infoHeight };
 }
 
 /** The largest size with the given aspect ratio that fits inside the container. */

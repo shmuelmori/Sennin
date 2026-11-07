@@ -38,8 +38,8 @@ export default function FeedScreen() {
     [onPlaying, onPlaybackChange],
   );
 
-  // The tab bar sits below the feed and keeps clear of Android's navigation
-  // bar itself, so the info strip needs no bottom inset.
+  // The channel name and title sit in a strip at the top of each page, the
+  // player below it, down to the tab bar.
   const layout = useMemo(
     () => (pageSize ? feedPageLayout(pageSize, sizes.feedInfoMinHeight) : null),
     [pageSize],
@@ -91,7 +91,6 @@ export default function FeedScreen() {
         pages={pages}
         pageSize={pageSize}
         layout={layout}
-        bottomInset={0}
         initialIndex={state.startIndex}
         currentIndex={currentIndex}
         active={focused}
