@@ -55,6 +55,11 @@ Questions the POC answers:
 - No list yet: empty screen with an "Open Refresh" button that switches to the Refresh tab. End of list: "That's it for today".
 - Pause, counter and loop decided on 2026-11-06.
 
+**Home**
+
+- The screen the app opens on. It shows the Sennin image (`assets/images/sennin.jpeg`) whole (`contain`, never cropped or stretched), centered on Deep Sea Night above the tab bar, with no text.
+- The image fades in once it has loaded, like the dusk scene, so there is no white flash. Decided on 2026-11-07.
+
 **Sources**
 
 - Channel list with thumbnail, name and topic tags.
