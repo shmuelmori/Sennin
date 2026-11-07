@@ -10,6 +10,7 @@ export const FETCH_LOG_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 type FetchLogRow = {
   id: number;
   startedAt: number;
+  finishedAt: number | null;
   fetched: number;
   rejectedByRule: string;
   quotaUsed: number;
@@ -23,9 +24,16 @@ type FetchLogRow = {
 export async function insertFetchLog(db: SQLiteDatabase, log: NewFetchLog): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.runAsync(
-      `INSERT INTO fetch_log (startedAt, fetched, rejectedByRule, quotaUsed, error)
-       VALUES (?, ?, ?, ?, ?)`,
-      [log.startedAtMs, log.fetched, encodeRejections(log.rejected), log.quotaUsed, log.error],
+      `INSERT INTO fetch_log (startedAt, finishedAt, fetched, rejectedByRule, quotaUsed, error)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        log.startedAtMs,
+        log.finishedAtMs,
+        log.fetched,
+        encodeRejections(log.rejected),
+        log.quotaUsed,
+        log.error,
+      ],
     );
     await db.runAsync('DELETE FROM fetch_log WHERE startedAt < ?', [
       log.startedAtMs - FETCH_LOG_MAX_AGE_MS,
@@ -49,7 +57,7 @@ export async function getLastCompletedFetchStart(db: SQLiteDatabase): Promise<nu
 /** The most recent fetch, or null if there was none. */
 export async function getLatestFetchLog(db: SQLiteDatabase): Promise<FetchLog | null> {
   const row = await db.getFirstAsync<FetchLogRow>(
-    `SELECT id, startedAt, fetched, rejectedByRule, quotaUsed, error
+    `SELECT id, startedAt, finishedAt, fetched, rejectedByRule, quotaUsed, error
      FROM fetch_log ORDER BY id DESC LIMIT 1`,
   );
   if (row === null) {
@@ -62,6 +70,7 @@ export async function getLatestFetchLog(db: SQLiteDatabase): Promise<FetchLog | 
   return {
     id: row.id,
     startedAtMs: row.startedAt,
+    finishedAtMs: row.finishedAt,
     fetched: row.fetched,
     rejected,
     quotaUsed: row.quotaUsed,

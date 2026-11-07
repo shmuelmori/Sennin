@@ -1,8 +1,10 @@
-// What the Status screen shows (spec §4, F11, step 8.1): the last fetch's
-// time, how many videos it fetched, how many each rule rejected, the API units
-// it used and any error, plus whether the API key is loaded.
+// The fetch report the Status and Refresh screens show (spec §4, F11): the
+// last fetch's time and duration, how many videos it fetched, how many each
+// rule rejected, the API units it used and any error, plus (Status only)
+// whether the API key is loaded.
 
 import type { ApiKeyCheck } from './apiKey';
+import { formatSeconds } from './fetchMessages';
 import { countRejectionsByRule, RULE_NAMES, type RuleName } from './filterRules';
 import type { FetchLog } from './records';
 
@@ -21,11 +23,17 @@ export type StatusRow = { label: string; value: string };
 
 export type RuleCount = { rule: RuleName; label: string; count: number };
 
+/** The report as a screen holds it: still reading fetch_log, failed to, or ready. */
+export type FetchReportState =
+  | { status: 'loading' }
+  | { status: 'failed'; message: string }
+  | { status: 'ready'; report: StatusReport };
+
 export type StatusReport =
   | { hasFetch: false }
   | {
       hasFetch: true;
-      /** Time, videos fetched, passed, rejected and units used. */
+      /** Time, duration, videos fetched, passed, rejected and units used. */
       summary: StatusRow[];
       /** Every rule in the §5 order, including those that rejected nothing. */
       rules: RuleCount[];
@@ -71,6 +79,11 @@ export function formatFetchTime(startedAtMs: number, nowMs: number): string {
   return `${day} ${clock} (${formatAge(Math.max(0, nowMs - startedAtMs))})`;
 }
 
+/** How long the fetch took, or "—" for a fetch logged before schema v2 saved the end. */
+export function formatFetchDuration(log: Pick<FetchLog, 'startedAtMs' | 'finishedAtMs'>): string {
+  return log.finishedAtMs === null ? '—' : formatSeconds(log.finishedAtMs - log.startedAtMs);
+}
+
 /** The report for the latest fetch_log row, or "no fetch yet" if there is none. */
 export function buildStatusReport(log: FetchLog | null, nowMs: number): StatusReport {
   if (log === null) {
@@ -82,6 +95,7 @@ export function buildStatusReport(log: FetchLog | null, nowMs: number): StatusRe
     hasFetch: true,
     summary: [
       { label: 'Time', value: formatFetchTime(log.startedAtMs, nowMs) },
+      { label: 'Duration', value: formatFetchDuration(log) },
       { label: 'Videos fetched', value: String(log.fetched) },
       { label: 'Passed the filters', value: String(Math.max(0, log.fetched - rejected)) },
       { label: 'Rejected', value: String(rejected) },

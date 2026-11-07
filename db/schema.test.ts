@@ -55,6 +55,21 @@ describe('initDatabase', () => {
     expect(JSON.parse(row?.keywords ?? '[]')).toContain('ww2');
   });
 
+  it('adds fetch_log.finishedAt to a v1 database and keeps its rows', async () => {
+    // A v1 database, as the app made it before the column existed.
+    await initDatabase(db);
+    await db.execAsync('ALTER TABLE fetch_log DROP COLUMN finishedAt; PRAGMA user_version = 1');
+    await db.runAsync(
+      `INSERT INTO fetch_log (startedAt, fetched, rejectedByRule, quotaUsed, error)
+       VALUES (100, 50, '[]', 4, NULL)`,
+    );
+    await initDatabase(db);
+    expect((await readDatabaseSummary(db)).schemaVersion).toBe(2);
+    expect(await db.getAllAsync('SELECT startedAt, finishedAt, fetched FROM fetch_log')).toEqual([
+      { startedAt: 100, finishedAt: null, fetched: 50 },
+    ]);
+  });
+
   it('refuses a database from a newer app version', async () => {
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`);
     await expect(initDatabase(db)).rejects.toThrow('newer than this app');

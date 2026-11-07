@@ -28,6 +28,8 @@ export const spacing = {
 export const radius = {
   sm: 8,
   md: 12,
+  /** The large Refresh button. */
+  lg: 20,
   pill: 999,
 } as const;
 
@@ -37,12 +39,19 @@ export const sizes = {
    * channel name, two lines of title).
    */
   feedInfoMinHeight: 84,
+  /** The large Refresh button in the middle of the Refresh tab. */
+  refreshButtonWidth: 220,
+  refreshButtonHeight: 64,
+  /** The round trash button on a Sources card: a comfortable touch target. */
+  trashButton: 44,
 } as const;
 
 export const fontSize = {
   small: 14,
   body: 16,
   title: 24,
+  /** The label of the large Refresh button. */
+  button: 20,
   /** The short label under each bottom bar icon. */
   tabLabel: 12,
 } as const;

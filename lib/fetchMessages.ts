@@ -59,15 +59,17 @@ export function fetchLogError(outcome: FetchOutcome, extra: string | null = null
   return parts.length === 0 ? null : parts.join('; ');
 }
 
-/** The fetch_log row (F5): every rejected video with its rule, plus the units used. */
+/** The fetch_log row (F5): every rejected video with its rule, the units used and when it ran. */
 export function toFetchLog(
   outcome: FetchOutcome,
   startedAtMs: number,
+  finishedAtMs: number,
   quotaUsed: number,
   extraError: string | null = null,
 ): NewFetchLog {
   return {
     startedAtMs,
+    finishedAtMs,
     fetched: outcome.counts.fetched,
     rejected: outcome.ok ? outcome.rejected : [],
     quotaUsed,
@@ -108,6 +110,11 @@ export function describeFetchOutcome(outcome: FetchOutcome): FetchMessage {
   return { title, message: lines.join('\n\n') };
 }
 
+/** A fetch's duration as the [fetch] lines and the report show it: "12.3 s". */
+export function formatSeconds(durationMs: number): string {
+  return `${(Math.max(0, durationMs) / 1000).toFixed(1)} s`;
+}
+
 /** The [fetch] summary for the Expo terminal: counts, units and time (§8 targets). */
 export function fetchSummaryLines(
   outcome: FetchOutcome,
@@ -115,7 +122,7 @@ export function fetchSummaryLines(
   quotaUsed: number,
   durationMs: number,
 ): string[] {
-  const cost = `${plural(quotaUsed, 'unit')}, ${(durationMs / 1000).toFixed(1)} s`;
+  const cost = `${plural(quotaUsed, 'unit')}, ${formatSeconds(durationMs)}`;
   const lines = outcome.skipped.map(
     (channel) => `skipped ${channel.title} (${channel.channelId}): ${formatError(channel.error)}`,
   );

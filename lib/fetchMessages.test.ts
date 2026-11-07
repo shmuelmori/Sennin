@@ -4,6 +4,7 @@ import {
   fetchLogError,
   fetchSummaryLines,
   formatError,
+  formatSeconds,
   rejectionLines,
   replacesList,
   toFetchLog,
@@ -85,8 +86,9 @@ describe('fetchLogError', () => {
 
 describe('toFetchLog', () => {
   it('keeps the rejections, the fetched count and the units', () => {
-    expect(toFetchLog(done(15, 10, SKIPPED), 1000, 34)).toEqual({
+    expect(toFetchLog(done(15, 10, SKIPPED), 1000, 13_400, 34)).toEqual({
       startedAtMs: 1000,
+      finishedAtMs: 13_400,
       fetched: 118,
       rejected: REJECTED,
       quotaUsed: 34,
@@ -95,13 +97,26 @@ describe('toFetchLog', () => {
   });
 
   it('logs a failed fetch with no rejections', () => {
-    expect(toFetchLog(failed(QUOTA), 1000, 5)).toEqual({
+    expect(toFetchLog(failed(QUOTA), 1000, 2000, 5)).toEqual({
       startedAtMs: 1000,
+      finishedAtMs: 2000,
       fetched: 0,
       rejected: [],
       quotaUsed: 5,
       error: 'failed: quotaExceeded (HTTP 403): quota used up',
     });
+  });
+});
+
+describe('formatSeconds', () => {
+  it('shows tenths of a second', () => {
+    expect(formatSeconds(12_345)).toBe('12.3 s');
+    expect(formatSeconds(0)).toBe('0.0 s');
+    expect(formatSeconds(65_000)).toBe('65.0 s');
+  });
+
+  it('shows a negative duration (clock moved back) as zero', () => {
+    expect(formatSeconds(-500)).toBe('0.0 s');
   });
 });
 

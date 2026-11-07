@@ -68,9 +68,15 @@ Questions the POC answers:
 - Tap a topic tag on a row to assign or unassign that topic. A channel always keeps at least one topic (F3).
 - Add, remove and topic behavior decided on 2026-11-06.
 
+**Refresh**
+
+- A large rounded Sunset button in the middle of the screen, with a bold Deep Sea Night label (F4). While a fetch runs, it is disabled and shows a spinner and "Fetching…"; a second tap does nothing.
+- Under it: the result of the last tap (e.g. "New list ready", or why the list stayed), then the last fetch's report from `fetch_log`, the same one Status shows. When the tab opens it shows the last fetch, or "No fetch yet".
+- A fetch keeps running if another tab is opened, and its report shows when you come back. Decided on 2026-11-08, replacing the alert that followed a Refresh.
+
 **Status**
 
-- Time of the last fetch, how many videos were fetched, how many were rejected and by which rule, and API units used.
+- Time of the last fetch, how long it took, how many videos were fetched, how many were rejected and by which rule, and API units used.
 - Every rule is listed in the §5 order, including rules that rejected nothing. The fetch's error (a failure or skipped channels) is shown when there is one, and so is whether the API key is loaded. Added on 2026-11-06.
 
 ## 5. Fetch process
@@ -127,12 +133,13 @@ When a fetch fails (decided on 2026-11-06):
 | channel\_topic | channelId, topicId |
 | feed\_item | position, videoId, channelId, channelTitle, title, durationSec, isReserve, status |
 | watched | videoId (primary key), watchedAt |
-| fetch\_log | startedAt, fetched, rejectedByRule, quotaUsed, error |
+| fetch\_log | startedAt, finishedAt, fetched, rejectedByRule, quotaUsed, error |
 
 - `feed_item.channelTitle` is saved with each video, so videos from a removed channel still show their channel name (F2). Added on 2026-11-06.
 - `feed_item.status` is `unseen`, `watched` or `skipped`.
 - `fetch_log.rejectedByRule` is a JSON list with one `{videoId, rule, detail}` per rejected video (F5). The Status screen counts them per rule. Fetch logs older than 30 days are deleted when a new fetch is saved. Decided on 2026-11-06.
 - `fetch_log.fetched` is the number of videos `videos.list` returned, which the filters then checked. It is 0 for a fetch that stopped on an error. `fetch_log.error` names the failure and any skipped channels, or is empty. Decided on 2026-11-06.
+- `fetch_log.finishedAt` is when the fetch ended, after the new list was saved. The Refresh and Status screens show the duration from `startedAt`. Fetches logged before the column existed (schema v1) have no `finishedAt` and show "—". Added on 2026-11-08 (schema v2).
 - Times are stored as milliseconds since 1970, and true/false as 1/0.
 
 ## 8. Non-functional requirements

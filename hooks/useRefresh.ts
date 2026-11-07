@@ -21,9 +21,9 @@ import {
 import { failedBeforeStart, type FetchInput, type FetchOutcome, runFetch } from '@/lib/fetchPipeline';
 import { createYoutubeClient } from '@/services/youtube';
 
-// The "Refresh" button (F4, steps 6.1 and 6.2): reads the channels, the
+// The Refresh tab's button (F4, steps 6.1 and 6.2): reads the channels, the
 // watched videos and the current list, runs the §5 fetch, saves the new list
-// and writes fetch_log. If the fetch fails or finds nothing, the list stays.
+// and writes fetch_log, with when the fetch started and ended. If the fetch fails or finds nothing, the list stays.
 // Every fetch logs [fetch] lines to the Expo terminal: counts, units, time,
 // and the rejections per rule read back from fetch_log. A saved list is
 // announced through FeedListSignal, so the Feed tab reads it.
@@ -64,11 +64,12 @@ async function saveLog(
   db: SQLiteDatabase,
   outcome: FetchOutcome,
   startedAtMs: number,
+  finishedAtMs: number,
   quotaUsed: number,
   saveError: string | null,
 ): Promise<boolean> {
   try {
-    await insertFetchLog(db, toFetchLog(outcome, startedAtMs, quotaUsed, saveError));
+    await insertFetchLog(db, toFetchLog(outcome, startedAtMs, finishedAtMs, quotaUsed, saveError));
     return true;
   } catch (cause) {
     log(`saving fetch_log failed: ${String(cause)}`);
@@ -114,8 +115,11 @@ async function refreshFeed(db: SQLiteDatabase): Promise<RefreshResult> {
   const quotaUsed = created.ok ? created.value.unitsUsed() : 0;
 
   const saveError = await saveList(db, outcome);
-  const logSaved = await saveLog(db, outcome, startedAtMs, quotaUsed, saveError);
-  const durationMs = Date.now() - startedAtMs;
+  // The fetch ends once the list is saved. The same duration goes to
+  // fetch_log and the [fetch] lines, so the report matches the terminal.
+  const finishedAtMs = Date.now();
+  const durationMs = finishedAtMs - startedAtMs;
+  const logSaved = await saveLog(db, outcome, startedAtMs, finishedAtMs, quotaUsed, saveError);
   fetchSummaryLines(outcome, input.channels.length, quotaUsed, durationMs).forEach(log);
   if (logSaved && outcome.ok) {
     await logStoredRejections(db);
