@@ -1,5 +1,5 @@
-import { Stack } from 'expo-router';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddChannelForm, type FormMessage } from '@/components/AddChannelForm';
 import { ChannelRow } from '@/components/ChannelRow';
@@ -37,43 +37,40 @@ export default function SourcesScreen() {
           'Swipe a channel sideways to remove it, and tap a topic to switch it on or off.';
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Sources' }} />
-      <View style={styles.screen}>
-        <AddChannelForm
-          value={add.input}
-          onChangeText={add.setInput}
-          topics={topicOptions(add.topicIds)}
-          onToggleTopic={add.toggleTopic}
-          canSubmit={canAddChannel(add.input, add.topicIds)}
-          busy={add.state.status === 'adding'}
-          onSubmit={add.submit}
-          message={formMessage(add.state)}
-        />
-        {error !== null && <Text style={[styles.note, styles.error]}>{error}</Text>}
-        {hint !== null && <Text style={styles.note}>{hint}</Text>}
-        <FlatList
-          data={channels ?? []}
-          keyExtractor={(channel) => channel.channelId}
-          keyboardShouldPersistTaps="handled"
-          ItemSeparatorComponent={Divider}
-          renderItem={({ item }) => (
-            <SwipeToRemove
-              actionLabel="Remove"
-              accessibilityLabel={`Remove ${item.title}`}
-              onRemove={() => remove(item)}
-            >
-              <ChannelRow
-                title={item.title}
-                thumbnailUrl={item.thumbnailUrl}
-                topics={topicOptions(item.topicIds)}
-                onToggleTopic={(topicId) => toggleTopic(item, topicId)}
-              />
-            </SwipeToRemove>
-          )}
-        />
-      </View>
-    </>
+    <SafeAreaView style={styles.screen} edges={['top']}>
+      <AddChannelForm
+        value={add.input}
+        onChangeText={add.setInput}
+        topics={topicOptions(add.topicIds)}
+        onToggleTopic={add.toggleTopic}
+        canSubmit={canAddChannel(add.input, add.topicIds)}
+        busy={add.state.status === 'adding'}
+        onSubmit={add.submit}
+        message={formMessage(add.state)}
+      />
+      {error !== null && <Text style={[styles.note, styles.error]}>{error}</Text>}
+      {hint !== null && <Text style={styles.note}>{hint}</Text>}
+      <FlatList
+        data={channels ?? []}
+        keyExtractor={(channel) => channel.channelId}
+        keyboardShouldPersistTaps="handled"
+        ItemSeparatorComponent={Divider}
+        renderItem={({ item }) => (
+          <SwipeToRemove
+            actionLabel="Remove"
+            accessibilityLabel={`Remove ${item.title}`}
+            onRemove={() => remove(item)}
+          >
+            <ChannelRow
+              title={item.title}
+              thumbnailUrl={item.thumbnailUrl}
+              topics={topicOptions(item.topicIds)}
+              onToggleTopic={(topicId) => toggleTopic(item, topicId)}
+            />
+          </SwipeToRemove>
+        )}
+      />
+    </SafeAreaView>
   );
 }
 

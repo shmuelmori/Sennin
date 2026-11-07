@@ -43,4 +43,6 @@ export const fontSize = {
   small: 14,
   body: 16,
   title: 24,
+  /** The short label under each bottom bar icon. */
+  tabLabel: 12,
 } as const;
