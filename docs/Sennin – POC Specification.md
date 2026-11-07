@@ -62,9 +62,9 @@ Questions the POC answers:
 
 **Sources**
 
-- Channel list with thumbnail, name and topic tags.
+- Channel list, each channel a rounded card (Teal Mist outline) with thumbnail, name and topic tags.
 - Add by link or @handle, picking one or both topics in the add form. The Add button stays disabled until a topic is picked.
-- Remove by swiping a row sideways, which uncovers a "Remove" button. Tapping it removes the channel.
+- Remove with the round Sunset trash button on each card. It asks "Remove <channel>?" (Remove / Cancel) first, so a stray tap can't remove a channel. Replaced swipe-to-remove on 2026-11-08.
 - Tap a topic tag on a row to assign or unassign that topic. A channel always keeps at least one topic (F3).
 - Add, remove and topic behavior decided on 2026-11-06.
 
