@@ -7,17 +7,15 @@ type Props = {
   channelTitle: string;
   title: string;
   height: number;
-  /** Space kept free at the bottom for the system navigation bar. */
-  bottomInset: number;
 };
 
-// The strip under a feed video (§4): channel name and title. It sits below
-// the player, never over it. Each line takes the direction of its own text
-// (step 9.3), so a Hebrew title starts on the right and an English one on
-// the left, whatever the phone's language.
-export function ShortInfo({ channelTitle, title, height, bottomInset }: Props) {
+// The strip above a feed video (§4): channel name and title. It ends where
+// the player starts, so it never covers the player. Each line takes the
+// direction of its own text (step 9.3), so a Hebrew title starts on the right
+// and an English one on the left, whatever the phone's language.
+export function ShortInfo({ channelTitle, title, height }: Props) {
   return (
-    <View style={[styles.strip, { height, paddingBottom: bottomInset + spacing.sm }]}>
+    <View style={[styles.strip, { height }]}>
       <Text
         style={[styles.channel, { direction: textDirection(channelTitle) ?? 'inherit' }]}
         numberOfLines={1}
@@ -39,7 +37,8 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    overflow: 'hidden',
     backgroundColor: colors.deepSeaNight,
   },
   channel: {

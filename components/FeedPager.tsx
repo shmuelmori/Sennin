@@ -24,7 +24,6 @@ type Props = {
   pages: readonly FeedPage[];
   pageSize: Size;
   layout: FeedPageLayout;
-  bottomInset: number;
   /** The page to open on. Read once, when the pager mounts. */
   initialIndex: number;
   currentIndex: number;
@@ -38,16 +37,15 @@ type Props = {
 
 // The vertical paging feed (§3, §4, F7): one video per page, then the
 // "That's it for today" page. The pages themselves hold no player. Three
-// players (lib/playerSlots.ts) sit over the current page and its neighbors,
-// and move to new pages as you swipe, so the feed never creates more than
-// three WebViews. Only the current video plays. The next page is chosen as
+// players (lib/playerSlots.ts) sit under the strip of the current page and
+// its neighbors, and move to new pages as you swipe, so the feed never
+// creates more than three WebViews. Only the current video plays. The next page is chosen as
 // soon as the snap starts moving after the finger lifts (step 7.5), so its
 // video starts while the page is still sliding in.
 export function FeedPager({
   pages,
   pageSize,
   layout,
-  bottomInset,
   initialIndex,
   currentIndex,
   active,
@@ -119,7 +117,6 @@ export function FeedPager({
             title={page.item.title}
             pageSize={pageSize}
             layout={layout}
-            bottomInset={bottomInset}
           />
         ) : (
           <View key={feedPageKey(page)} style={pageSize}>
@@ -139,7 +136,7 @@ export function FeedPager({
             key={`player-${slot}`}
             videoId={page.item.videoId}
             size={layout.player}
-            top={pageIndex * pageSize.height}
+            top={pageIndex * pageSize.height + layout.playerTop}
             left={playerLeft}
             playing={active && pageIndex === currentIndex}
             onPlayerError={onPlayerError}

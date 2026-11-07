@@ -25,6 +25,7 @@ afterEach(async () => {
 function log(startedAtMs: number): NewFetchLog {
   return {
     startedAtMs,
+    finishedAtMs: startedAtMs + 9_000,
     fetched: 120,
     rejected: [
       { videoId: 'a', rule: 'length', detail: '240 s' },
@@ -44,6 +45,11 @@ describe('insertFetchLog and getLatestFetchLog', () => {
     await insertFetchLog(db, log(100));
     await insertFetchLog(db, log(200));
     expect(await getLatestFetchLog(db)).toEqual({ ...log(200), id: 2 });
+  });
+
+  it('reads back a log with no end time as null', async () => {
+    await insertFetchLog(db, { ...log(100), finishedAtMs: null });
+    expect(await getLatestFetchLog(db)).toMatchObject({ startedAtMs: 100, finishedAtMs: null });
   });
 
   it('keeps an error message', async () => {

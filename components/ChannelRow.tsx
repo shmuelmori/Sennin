@@ -6,22 +6,26 @@ import type { TopicId } from '@/lib/topics';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
 import { TopicChip } from './TopicChip';
+import { TrashButton } from './TrashButton';
 
 type Props = {
   title: string;
   thumbnailUrl: string | null;
   topics: readonly TopicOption[];
   onToggleTopic: (topicId: TopicId) => void;
+  /** The trash button was tapped. The screen asks before removing. */
+  onRemove: () => void;
 };
 
 const THUMBNAIL_SIZE = 48;
 
-// One saved channel on the Sources screen (§4): thumbnail, name and topic
-// tags. Tapping a tag assigns or unassigns that topic (F3). The name takes
-// the direction of its own text (step 9.3), like the titles in the feed.
-export function ChannelRow({ title, thumbnailUrl, topics, onToggleTopic }: Props) {
+// One saved channel on the Sources screen (§4), as a rounded card:
+// thumbnail, name, topic tags and a trash button at the end. Tapping a tag
+// assigns or unassigns that topic (F3). The name takes the direction of its
+// own text (step 9.3), like the titles in the feed.
+export function ChannelRow({ title, thumbnailUrl, topics, onToggleTopic, onRemove }: Props) {
   return (
-    <View style={styles.row}>
+    <View style={styles.card}>
       {thumbnailUrl === null ? (
         <View style={[styles.thumbnail, styles.noThumbnail]} />
       ) : (
@@ -49,17 +53,21 @@ export function ChannelRow({ title, thumbnailUrl, topics, onToggleTopic }: Props
           ))}
         </View>
       </View>
+      <TrashButton accessibilityLabel={`Remove ${title}`} onPress={onRemove} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 4,
+    borderWidth: 1,
+    borderColor: colors.tealMist,
+    borderRadius: radius.md,
     backgroundColor: colors.deepSeaNight,
   },
   thumbnail: {

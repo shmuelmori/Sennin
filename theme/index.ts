@@ -8,7 +8,7 @@ export const colors = {
   sunset: '#E0533A',
   /** Secondary buttons, topic tags, dividers. Text on it: deepSeaNight, bold. */
   tealMist: '#2F8F8A',
-  /** Small highlights: the channel name under the video, icons, sakura. As text, only on deepSeaNight. */
+  /** Small highlights: the channel name above the video, icons, sakura. As text, only on deepSeaNight. */
   cherryBlossom: '#F3C6C8',
   /** Body text and titles. Only on deepSeaNight. */
   silver: '#DCDFDE',
@@ -28,21 +28,30 @@ export const spacing = {
 export const radius = {
   sm: 8,
   md: 12,
+  /** The large Refresh button. */
+  lg: 20,
   pill: 999,
 } as const;
 
 export const sizes = {
   /**
-   * Smallest height of the strip under a feed video (padding, one line of
-   * channel name, two lines of title), not counting the bottom inset.
+   * Smallest height of the strip above a feed video (padding, one line of
+   * channel name, two lines of title).
    */
   feedInfoMinHeight: 84,
+  /** The large Refresh button in the middle of the Refresh tab. */
+  refreshButtonWidth: 220,
+  refreshButtonHeight: 64,
+  /** The round trash button on a Sources card: a comfortable touch target. */
+  trashButton: 44,
 } as const;
 
 export const fontSize = {
   small: 14,
   body: 16,
   title: 24,
+  /** The label of the large Refresh button. */
+  button: 20,
   /** The short label under each bottom bar icon. */
   tabLabel: 12,
 } as const;

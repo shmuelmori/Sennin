@@ -40,6 +40,11 @@ export type FeedItem = NewFeedItem & {
 
 export type NewFetchLog = {
   startedAtMs: number;
+  /**
+   * When the fetch ended, after the new list was saved. null for fetches
+   * logged before fetch_log had the column (schema v2).
+   */
+  finishedAtMs: number | null;
   fetched: number;
   /** Each rejected video with the rule that rejected it (F5). */
   rejected: RejectedVideo[];

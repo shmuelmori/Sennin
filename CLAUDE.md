@@ -67,7 +67,7 @@ scripts/      dev tools, not part of the app (generate_art.py draws the art, ico
 ## UI
 - Define the palette from spec §11 once, in a theme file. Components import from it; no hex literals in components.
 - Text on Sunset (#E0533A) or Teal Mist (#2F8F8A) buttons is Deep Sea Night (#0E2A2F) and bold. Use Silver and Cherry Blossom only for text on Deep Sea Night.
-- The channel name and title sit in a strip below the player and never cover it or its controls. Decorative art (sakura, clouds) never goes over the player.
+- The channel name and title sit in a strip above the player and never cover it or its controls. Decorative art (sakura, clouds) never goes over the player.
 - Use calm motion only: fades, no bounce or spring animations.
 - Text can be Hebrew or English, so don't hard-code left alignment.
 

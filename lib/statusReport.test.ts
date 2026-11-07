@@ -4,6 +4,7 @@ import {
   buildStatusReport,
   describeApiKeyStatus,
   formatAge,
+  formatFetchDuration,
   formatFetchTime,
   RULE_LABELS,
 } from './statusReport';
@@ -19,6 +20,7 @@ function log(overrides: Partial<FetchLog> = {}): FetchLog {
   return {
     id: 1,
     startedAtMs: new Date(2026, 10, 6, 14, 32).getTime(),
+    finishedAtMs: new Date(2026, 10, 6, 14, 32, 12, 400).getTime(),
     fetched: 100,
     rejected: [],
     quotaUsed: 4,
@@ -85,6 +87,16 @@ describe('formatFetchTime', () => {
   });
 });
 
+describe('formatFetchDuration', () => {
+  it('shows the time from start to end in seconds', () => {
+    expect(formatFetchDuration({ startedAtMs: 1000, finishedAtMs: 9_550 })).toBe('8.6 s');
+  });
+
+  it('shows a dash for a fetch logged before the end time was saved', () => {
+    expect(formatFetchDuration({ startedAtMs: 1000, finishedAtMs: null })).toBe('—');
+  });
+});
+
 describe('buildStatusReport', () => {
   it('reports no fetch when there is no log', () => {
     expect(buildStatusReport(null, NOW)).toEqual({ hasFetch: false });
@@ -95,6 +107,7 @@ describe('buildStatusReport', () => {
     if (!report.hasFetch) throw new Error('expected a fetch');
     expect(report.summary).toEqual([
       { label: 'Time', value: 'Today 14:32 (5 min ago)' },
+      { label: 'Duration', value: '12.4 s' },
       { label: 'Videos fetched', value: '100' },
       { label: 'Passed the filters', value: '97' },
       { label: 'Rejected', value: '3' },
@@ -115,6 +128,12 @@ describe('buildStatusReport', () => {
       { rule: 'keyword', label: 'No topic keyword', count: 0 },
       { rule: 'minViews', label: 'Under 1,000 views', count: 1 },
     ]);
+  });
+
+  it('shows a dash for the duration of an old log', () => {
+    const report = buildStatusReport(log({ finishedAtMs: null }), NOW);
+    if (!report.hasFetch) throw new Error('expected a fetch');
+    expect(report.summary.find((row) => row.label === 'Duration')?.value).toBe('—');
   });
 
   it('passes the error through for a failed fetch', () => {

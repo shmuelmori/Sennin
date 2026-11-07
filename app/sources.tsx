@@ -1,12 +1,11 @@
-import { FlatList, StyleSheet, Text } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddChannelForm, type FormMessage } from '@/components/AddChannelForm';
 import { ChannelRow } from '@/components/ChannelRow';
-import { Divider } from '@/components/Divider';
-import { SwipeToRemove } from '@/components/SwipeToRemove';
 import { useAddChannel, type AddChannelState } from '@/hooks/useAddChannel';
 import { useChannels } from '@/hooks/useChannels';
+import type { Channel } from '@/lib/records';
 import { canAddChannel, topicOptions } from '@/lib/topicSelection';
 import { colors, fontSize, spacing } from '@/theme';
 
@@ -22,11 +21,24 @@ function formMessage(state: AddChannelState): FormMessage | null {
   }
 }
 
+function CardGap() {
+  return <View style={styles.gap} />;
+}
+
+// Expo Router requires a default export for route files.
 // Sources screen (spec §4, F1–F3): add a channel by link or @handle, see the
-// saved channels, swipe one to remove it, and tap its topic tags to assign it.
+// saved channels as cards, remove one with its trash button (after asking),
+// and tap its topic tags to assign it.
 export default function SourcesScreen() {
   const { channels, error, reload, remove, toggleTopic } = useChannels();
   const add = useAddChannel(reload);
+
+  const confirmRemove = (channel: Channel) => {
+    Alert.alert(`Remove ${channel.title}?`, 'Videos already in your list stay there.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => void remove(channel) },
+    ]);
+  };
 
   const hint =
     channels === null
@@ -34,7 +46,7 @@ export default function SourcesScreen() {
       : channels.length === 0
         ? 'No channels yet. Paste a channel link or @handle above.'
         : `${channels.length} channel${channels.length === 1 ? '' : 's'}. ` +
-          'Swipe a channel sideways to remove it, and tap a topic to switch it on or off.';
+          'Tap a topic to switch it on or off, or the trash button to remove a channel.';
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -54,20 +66,16 @@ export default function SourcesScreen() {
         data={channels ?? []}
         keyExtractor={(channel) => channel.channelId}
         keyboardShouldPersistTaps="handled"
-        ItemSeparatorComponent={Divider}
+        contentContainerStyle={styles.list}
+        ItemSeparatorComponent={CardGap}
         renderItem={({ item }) => (
-          <SwipeToRemove
-            actionLabel="Remove"
-            accessibilityLabel={`Remove ${item.title}`}
-            onRemove={() => remove(item)}
-          >
-            <ChannelRow
-              title={item.title}
-              thumbnailUrl={item.thumbnailUrl}
-              topics={topicOptions(item.topicIds)}
-              onToggleTopic={(topicId) => toggleTopic(item, topicId)}
-            />
-          </SwipeToRemove>
+          <ChannelRow
+            title={item.title}
+            thumbnailUrl={item.thumbnailUrl}
+            topics={topicOptions(item.topicIds)}
+            onToggleTopic={(topicId) => toggleTopic(item, topicId)}
+            onRemove={() => confirmRemove(item)}
+          />
         )}
       />
     </SafeAreaView>
@@ -88,5 +96,12 @@ const styles = StyleSheet.create({
   },
   error: {
     color: colors.cherryBlossom,
+  },
+  list: {
+    padding: spacing.md,
+    paddingTop: spacing.sm,
+  },
+  gap: {
+    height: spacing.sm,
   },
 });

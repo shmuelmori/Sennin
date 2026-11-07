@@ -46,7 +46,7 @@ Questions the POC answers:
 
 **Feed**
 
-- Full-screen video at the top of the page, with the channel name and title in a strip below it, so nothing covers the player.
+- The channel name and title in a strip at the top of the page, and the video below it (the largest 9:16 size that fits, down to the tab bar). The strip ends where the player starts, so nothing covers the player. Moved from below the player on 2026-11-08.
 - Swipe up: next video. Swipe down: previous video.
 - Pause and resume use the YouTube player's own controls. The app adds no tap handling of its own, because catching taps would mean covering the player.
 - A video loops when it ends, like in the Shorts app.
@@ -55,17 +55,28 @@ Questions the POC answers:
 - No list yet: empty screen with an "Open Refresh" button that switches to the Refresh tab. End of list: "That's it for today".
 - Pause, counter and loop decided on 2026-11-06.
 
+**Home**
+
+- The screen the app opens on. It shows the Sennin image (`assets/images/sennin.jpeg`) whole (`contain`, never cropped or stretched), centered on Deep Sea Night above the tab bar, with no text.
+- The image fades in once it has loaded, like the dusk scene, so there is no white flash. Decided on 2026-11-07.
+
 **Sources**
 
-- Channel list with thumbnail, name and topic tags.
+- Channel list, each channel a rounded card (Teal Mist outline) with thumbnail, name and topic tags.
 - Add by link or @handle, picking one or both topics in the add form. The Add button stays disabled until a topic is picked.
-- Remove by swiping a row sideways, which uncovers a "Remove" button. Tapping it removes the channel.
+- Remove with the round Sunset trash button on each card. It asks "Remove <channel>?" (Remove / Cancel) first, so a stray tap can't remove a channel. Replaced swipe-to-remove on 2026-11-08.
 - Tap a topic tag on a row to assign or unassign that topic. A channel always keeps at least one topic (F3).
 - Add, remove and topic behavior decided on 2026-11-06.
 
+**Refresh**
+
+- A large rounded Sunset button in the middle of the screen, with a bold Deep Sea Night label (F4). While a fetch runs, it is disabled and shows a spinner and "Fetching…"; a second tap does nothing.
+- Under it: the result of the last tap (e.g. "New list ready", or why the list stayed), then the last fetch's report from `fetch_log`, the same one Status shows. When the tab opens it shows the last fetch, or "No fetch yet".
+- A fetch keeps running if another tab is opened, and its report shows when you come back. Decided on 2026-11-08, replacing the alert that followed a Refresh.
+
 **Status**
 
-- Time of the last fetch, how many videos were fetched, how many were rejected and by which rule, and API units used.
+- Time of the last fetch, how long it took, how many videos were fetched, how many were rejected and by which rule, and API units used.
 - Every rule is listed in the §5 order, including rules that rejected nothing. The fetch's error (a failure or skipped channels) is shown when there is one, and so is whether the API key is loaded. Added on 2026-11-06.
 
 ## 5. Fetch process
@@ -122,12 +133,13 @@ When a fetch fails (decided on 2026-11-06):
 | channel\_topic | channelId, topicId |
 | feed\_item | position, videoId, channelId, channelTitle, title, durationSec, isReserve, status |
 | watched | videoId (primary key), watchedAt |
-| fetch\_log | startedAt, fetched, rejectedByRule, quotaUsed, error |
+| fetch\_log | startedAt, finishedAt, fetched, rejectedByRule, quotaUsed, error |
 
 - `feed_item.channelTitle` is saved with each video, so videos from a removed channel still show their channel name (F2). Added on 2026-11-06.
 - `feed_item.status` is `unseen`, `watched` or `skipped`.
 - `fetch_log.rejectedByRule` is a JSON list with one `{videoId, rule, detail}` per rejected video (F5). The Status screen counts them per rule. Fetch logs older than 30 days are deleted when a new fetch is saved. Decided on 2026-11-06.
 - `fetch_log.fetched` is the number of videos `videos.list` returned, which the filters then checked. It is 0 for a fetch that stopped on an error. `fetch_log.error` names the failure and any skipped channels, or is empty. Decided on 2026-11-06.
+- `fetch_log.finishedAt` is when the fetch ended, after the new list was saved. The Refresh and Status screens show the duration from `startedAt`. Fetches logged before the column existed (schema v1) have no `finishedAt` and show "—". Added on 2026-11-08 (schema v2).
 - Times are stored as milliseconds since 1970, and true/false as 1/0.
 
 ## 8. Non-functional requirements
@@ -169,7 +181,7 @@ When a fetch fails (decided on 2026-11-06):
 | Background | Deep Sea Night | #0E2A2F | All screen backgrounds |
 | Main | Sunset | #E0533A | Primary buttons ("Refresh"), active states, progress |
 | Second | Teal Mist | #2F8F8A | Secondary buttons, topic tags, dividers |
-| Accent | Cherry Blossom | #F3C6C8 | Small highlights: the channel name under the video, icons, sakura decorations |
+| Accent | Cherry Blossom | #F3C6C8 | Small highlights: the channel name above the video, icons, sakura decorations |
 | Text | Silver | #DCDFDE | Body text and titles on the background |
 
 **Contrast rules:** text on Sunset or Teal Mist buttons is Deep Sea Night and bold, not Silver (Silver on those colors is too low-contrast). Silver and Cherry Blossom are only for text on Deep Sea Night.
@@ -181,4 +193,4 @@ When a fetch fails (decided on 2026-11-06):
 - Reference image: `assets/Sennin.mp4` (a short clip of the wandering swordsman under cherry blossoms; it replaces the planned `mood.jpg`). Use it for color and mood only, not as a UI element.
 - Decorative art (2026-11-06): one dusk scene (`assets/images/dusk.jpg`) with sakura branches, swirling clouds, misty ridges, a pagoda and a low sun, behind the empty and end screens only. It fades in once loaded. Its middle third is plain dark sky, where the text sits. The app icon and splash use the same motif (sun, ridges, a sakura sprig). All of it is drawn by `scripts/generate_art.py` from the palette above, so rerun the script after a palette change.
 
-**YouTube constraint:** the theme applies only around the player (the channel name and title below it). The player itself keeps YouTube's branding, controls and ads untouched (see section 8).
+**YouTube constraint:** the theme applies only around the player (the channel name and title in the strip above it). The player itself keeps YouTube's branding, controls and ads untouched (see section 8).

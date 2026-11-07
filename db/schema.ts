@@ -13,7 +13,7 @@ import { FEED_STATUSES } from '@/lib/records';
 import { TOPICS } from '@/lib/topics';
 
 /** Bump this and add a step to migrateDatabase when the schema changes. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const statusList = FEED_STATUSES.map((status) => `'${status}'`).join(', ');
 
@@ -67,6 +67,10 @@ CREATE TABLE fetch_log (
 );
 `;
 
+// v2 (2026-11-08): when each fetch ended, for the report's duration (§7).
+// Rows logged before it keep NULL.
+const ADD_FETCH_FINISHED_AT_V2 = 'ALTER TABLE fetch_log ADD COLUMN finishedAt INTEGER';
+
 async function readSchemaVersion(db: SQLiteDatabase): Promise<number> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   return row?.user_version ?? 0;
@@ -81,6 +85,12 @@ async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     await db.withTransactionAsync(async () => {
       await db.execAsync(CREATE_TABLES_V1);
       await db.execAsync('PRAGMA user_version = 1');
+    });
+  }
+  if (version < 2) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(ADD_FETCH_FINISHED_AT_V2);
+      await db.execAsync('PRAGMA user_version = 2');
     });
   }
 }
