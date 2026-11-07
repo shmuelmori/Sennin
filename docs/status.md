@@ -11,25 +11,27 @@ The plan for moving the app from a stack with header buttons to five tabs with a
 - If a stage changes a decision, update the spec in the same branch. Spec §4 (Navigation, Feed, Sources, Refresh, Home), §7 (`fetch_log`) and §11 (info strip position) change in this redesign, and so does the "UI" section of `CLAUDE.md`.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next stage:** 1, built on `feature/tab-navigation` and waiting for the phone check.
+**Next stage:** 2 (Home screen)
 
 ---
 
-## Stage 1 – Tab navigation shell
+## Stage 1 – Tab navigation shell (2026-11-07, feature/tab-navigation)
 
 **Goal:** every screen shows a bottom bar with 5 buttons, the active one highlighted in Sunset. The existing screens keep working inside it.
 
-- [ ] Root `app/_layout.tsx` renders `Tabs` from `expo-router` (no native code), inside `ThemeProvider`, `DatabaseProvider` and `FeedListSignalProvider`. No `(tabs)` group was needed: all five routes sit directly in `app/`.
-- [ ] Five routes, in bar order: Feed (`app/feed.tsx`, moved from `index.tsx`), Status, Sources, Refresh (`app/refresh.tsx`), Home (`app/index.tsx`). The app opens on Home because it is `/`. Android's Back goes to the previously opened tab (`backBehavior="history"`).
-- [ ] Tab bar: Deep Sea Night background, Teal Mist top border, active tab Sunset, others Silver, 12 pt English label under each icon. Colors come from `theme/`.
-- [ ] Icons: `@expo/vector-icons` 15.0.2 **(dep, approved)**, Ionicons, outline when closed and filled when open (`components/TabIcon.tsx`): play-circle, stats-chart, albums, refresh-circle, home.
-- [ ] Headers removed on all screens. Each screen pads for the status bar with `SafeAreaView` (`edges={['top']}`). `components/HeaderButton.tsx` is removed.
-- [ ] Tabs switch with a fade.
-- [ ] The Feed pauses when another tab is open: `useIsFocused` still turns the pager's `active` off, since the Feed stays mounted.
-- [ ] Feed page height is measured by `onLayout` between the status bar and the tab bar. The info strip no longer adds `insets.bottom` (the tab bar keeps clear of Android's navigation bar), so `FeedPager` gets `bottomInset={0}`. Stage 3 removes the prop.
-- [ ] Pulled forward from Stage 4, because removing the headers removed the Feed's Refresh button: an interim Refresh tab with the old button and alert. `hooks/FeedListSignal.tsx` (a counter in context, no state library) lets `useRefresh` announce a saved list, and `useFeed` reads it again. The empty Feed's button is now "Open Refresh" and switches tabs. `useStatus` re-reads `fetch_log` each time the Status tab opens (`useFocusEffect`).
-- [ ] Home is a placeholder ("Sennin") until Stage 2.
-- [ ] Spec §4 "Navigation" and the Feed's Refresh lines updated.
+- [x] Root `app/_layout.tsx` renders `Tabs` from `expo-router` (no native code), inside `ThemeProvider`, `DatabaseProvider` and `FeedListSignalProvider`. No `(tabs)` group was needed: all five routes sit directly in `app/`.
+- [x] Five routes, in bar order: Feed (`app/feed.tsx`, moved from `index.tsx`), Status, Sources, Refresh (`app/refresh.tsx`), Home (`app/index.tsx`). The app opens on Home because it is `/`. Android's Back goes to the previously opened tab (`backBehavior="history"`).
+- [x] Tab bar: Deep Sea Night background, Teal Mist top border, active tab Sunset, others Silver, 12 pt English label under each icon. Colors come from `theme/`.
+- [x] Icons: `@expo/vector-icons` 15.0.2 **(dep, approved)**, Ionicons, outline when closed and filled when open (`components/TabIcon.tsx`): play-circle, stats-chart, albums, refresh-circle, home.
+- [x] Headers removed on all screens. Each screen pads for the status bar with `SafeAreaView` (`edges={['top']}`). `components/HeaderButton.tsx` is removed.
+- [x] Tabs switch with a fade.
+- [x] The Feed pauses when another tab is open: `useIsFocused` still turns the pager's `active` off, since the Feed stays mounted.
+- [x] Feed page height is measured by `onLayout` between the status bar and the tab bar. The info strip no longer adds `insets.bottom` (the tab bar keeps clear of Android's navigation bar), so `FeedPager` gets `bottomInset={0}`. Stage 3 removes the prop.
+- [x] Pulled forward from Stage 4, because removing the headers removed the Feed's Refresh button: an interim Refresh tab with the old button and alert. `hooks/FeedListSignal.tsx` (a counter in context, no state library) lets `useRefresh` announce a saved list, and `useFeed` reads it again. The empty Feed's button is now "Open Refresh" and switches tabs. `useStatus` re-reads `fetch_log` each time the Status tab opens (`useFocusEffect`).
+- [x] Home is a placeholder ("Sennin") until Stage 2.
+- [x] Spec §4 "Navigation" and the Feed's Refresh lines updated.
+
+*Result:* the user checked it on the phone and reported all good.
 
 **Acceptance (on the phone):**
 - The app opens on Home. All 5 buttons show on every screen, in the order Feed, Status, Sources, Refresh, Home (on this right-to-left phone, Feed is on the right). Tapping one opens its screen, and only that button is Sunset with a filled icon.
