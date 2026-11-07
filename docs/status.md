@@ -11,7 +11,9 @@ The plan for moving the app from a stack with header buttons to five tabs with a
 - If a stage changes a decision, update the spec in the same branch. Spec §4 (Navigation, Feed, Sources, Refresh, Home), §7 (`fetch_log`) and §11 (info strip position) change in this redesign, and so does the "UI" section of `CLAUDE.md`.
 - Steps that need a new dependency are marked **(dep)**. Ask the user before installing it.
 
-**Next stage:** 2 (Home screen)
+**Next stage:** the phone check of Stages 2–6, then Stage 7 (measurements).
+
+**Built, waiting for the phone check (2026-11-08):** Stages 2–5 are coded on `feature/redesign-stages-2-5` (one commit per stage), and Stage 6's desk checks pass. The user asked to build all stages first and test on the phone at the end. A stage's items get `[x]` and its heading the date once it passes the phone check and is merged.
 
 ---
 
@@ -46,10 +48,12 @@ The plan for moving the app from a stack with header buttons to five tabs with a
 
 **Goal:** Home shows the Sennin image and nothing else.
 
-- [ ] Add `assets/images/sennin.jpeg` (864x1200, 450 KB) to git. It's untracked right now.
+- [ ] Add `assets/images/sennin.jpeg` (864x1200, 450 KB) to git. *(Already tracked on `main`, nothing to do.)*
 - [ ] `app/index.tsx` shows the whole image (`contain`) centered on Deep Sea Night, above the tab bar, without cropping.
 - [ ] Fade the image in once it has loaded, like `DuskBackdrop` (reuse it with an image prop if that stays simple).
 - [ ] Spec §4: add a Home section.
+
+*Built:* `components/FadeInImage.tsx` holds the fade, and both Home and `DuskBackdrop` use it.
 
 **Acceptance (on the phone):**
 - Home shows the Sennin image, whole and not stretched, with no text and nothing else but the tab bar.
@@ -63,6 +67,8 @@ The plan for moving the app from a stack with header buttons to five tabs with a
 - [ ] `ShortInfo` moves to the top strip: channel name (Cherry Blossom) and title (Silver), each in its own text direction (`lib/textDirection.ts`). Remove its `bottomInset` prop and the one in `FeedPager` and `ShortPage`.
 - [ ] Keep the 3 reused players (`PlayerSlot`, `lib/playerSlots.ts`) and the paging `ScrollView`; only the page split changes.
 - [ ] Update spec §4 "Feed", §11 (the strip is above the player) and the "UI" section of `CLAUDE.md` ("The channel name and title sit in a strip below the player").
+
+*Built:* `feedPageLayout` returns `playerTop` (the strip's height), and `FeedPager` places each player at `page top + playerTop`. Height left over when the player is limited by width goes to the strip, as before.
 
 **Acceptance (on the phone):**
 - Each swipe moves exactly one video, in both directions, with no half pages and no drift after 15 swipes.
@@ -78,6 +84,8 @@ The plan for moving the app from a stack with header buttons to five tabs with a
 - [ ] The report under the button: videos fetched, passed, rejected per rule (all rules in §5 order), API units used, duration, and any error. Reuse `buildStatusReport` (`lib/statusReport.ts`) and `StatusRows`. It replaces the interim alert, and shows the last fetch from `fetch_log` when the tab opens (or "No fetch yet").
 - [ ] `fetch_log.finishedAt`: a schema migration (next `PRAGMA user_version`) adds the column, nullable for old rows. `useRefresh` saves it, and the report shows the duration, or "—" for rows from before the migration. Add it to Status too, so both screens show the same report. `db/` and `lib/` tests updated.
 - [ ] Update spec §4 (Refresh section) and §7 (`fetch_log.finishedAt`).
+
+*Built:* `components/RefreshButton.tsx`, `components/FetchReport.tsx` (shared with Status) and `hooks/useLastFetchReport.ts` (reads on focus and after a Refresh). The screen also shows the last tap's message (e.g. "New list ready", "No channels yet"), since a tap that stops before fetching writes no `fetch_log` row. The end time is taken right after the list is saved, and the `[fetch]` line uses the same duration. Schema v2: `ALTER TABLE fetch_log ADD COLUMN finishedAt INTEGER`.
 
 **Acceptance (on the phone):**
 - Tap Refresh: the button shows it is working, and the report appears when the fetch ends (under 60 s, under 100 units).
@@ -95,6 +103,8 @@ The plan for moving the app from a stack with header buttons to five tabs with a
 - [ ] The button replaces swipe-to-remove: remove `components/SwipeToRemove.tsx`, `lib/swipe.ts` and its tests, and update the hint text. Update spec §4 "Sources".
 - [ ] Thumbnail, name (own text direction), topic tags and the add form keep working as before.
 
+*Built:* `components/TrashButton.tsx`. The confirm alert is in `app/sources.tsx` and says videos already in the list stay. A removed card disappears at once (no fade, since the swipe's fade went with it).
+
 **Acceptance (on the phone):**
 - Each channel shows as a separate rounded card. The trash button is easy to hit and doesn't trigger a topic tag.
 - Remove asks first. Cancel keeps the channel; Remove removes it, and that survives an app restart. Its videos stay in the current feed (F2).
@@ -108,7 +118,7 @@ The plan for moving the app from a stack with header buttons to five tabs with a
 - [ ] Full flow: open the app → Home → Sources (add a channel) → Refresh → Feed (swipe through, watch one past half) → Status.
 - [ ] Watched: a video played past half doesn't come back after the next Refresh.
 - [ ] Auto-skip, looping and preloading still work.
-- [ ] Typecheck, lint and all tests pass.
+- [ ] Typecheck, lint and all tests pass. *(Passed on 2026-11-08: 28 suites, 466 tests. No hex literals outside `theme/`.)*
 
 **Acceptance (on the phone):**
 - Every step of the full flow works with no crash, no blank screen and no sound from a hidden tab.
