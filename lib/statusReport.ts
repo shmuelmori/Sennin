@@ -6,7 +6,7 @@
 import type { ApiKeyCheck } from './apiKey';
 import { formatSeconds } from './fetchMessages';
 import { countRejectionsByRule, RULE_NAMES, type RuleName } from './filterRules';
-import { unitsLeft } from './quota';
+import { quotaUsedPercent, unitsLeft } from './quota';
 import type { FetchLog } from './records';
 
 /** The §5 rules as the Status screen names them. */
@@ -27,6 +27,23 @@ export type ItemRow = StatusRow & { itemId: number; flagged: boolean };
 
 export type RuleCount = { rule: RuleName; label: string; count: number };
 
+/** The last fetch's numbers, formatted for the Refresh tab's cards. */
+export type FetchStats = {
+  /** e.g. "Today 14:32 (5 min ago)". */
+  fetchedAt: string;
+  duration: string;
+  topicsDrawn: string;
+  fetched: string;
+  passed: string;
+  selected: string;
+  rejected: string;
+  /** Units this fetch used. */
+  unitsUsed: string;
+  /** Units left today and today's used percent; null if quota_day couldn't be read. */
+  unitsLeftToday: string | null;
+  usedTodayPercent: number | null;
+};
+
 /** The report as a screen holds it: still reading fetch_log, failed to, or ready. */
 export type FetchReportState =
   | { status: 'loading' }
@@ -37,6 +54,7 @@ export type StatusReport =
   | { hasFetch: false }
   | {
       hasFetch: true;
+      stats: FetchStats;
       /** Time, duration, topics drawn, videos fetched, passed, selected, rejected and units. */
       summary: StatusRow[];
       /** Each drawn item in draw order. */
@@ -103,21 +121,34 @@ export function buildStatusReport(
   }
   const counts = countRejectionsByRule(log.rejected);
   const selected = log.itemsPicked.reduce((sum, item) => sum + item.selected, 0);
+  const stats: FetchStats = {
+    fetchedAt: formatFetchTime(log.startedAtMs, nowMs),
+    duration: formatSeconds(log.durationMs),
+    topicsDrawn: count(log.itemsPicked.length),
+    fetched: count(log.fetched),
+    passed: count(log.passed),
+    selected: count(selected),
+    rejected: count(log.rejected.length),
+    unitsUsed: count(log.quotaUsed),
+    unitsLeftToday: unitsUsedToday === null ? null : count(unitsLeft(unitsUsedToday)),
+    usedTodayPercent: unitsUsedToday === null ? null : quotaUsedPercent(unitsUsedToday),
+  };
   const summary: StatusRow[] = [
-    { label: 'Time', value: formatFetchTime(log.startedAtMs, nowMs) },
-    { label: 'Duration', value: formatSeconds(log.durationMs) },
-    { label: 'Topics drawn', value: count(log.itemsPicked.length) },
-    { label: 'Videos fetched', value: count(log.fetched) },
-    { label: 'Passed the filters', value: count(log.passed) },
-    { label: 'In the list', value: count(selected) },
-    { label: 'Rejected', value: count(log.rejected.length) },
-    { label: 'API units used', value: count(log.quotaUsed) },
+    { label: 'Time', value: stats.fetchedAt },
+    { label: 'Duration', value: stats.duration },
+    { label: 'Topics drawn', value: stats.topicsDrawn },
+    { label: 'Videos fetched', value: stats.fetched },
+    { label: 'Passed the filters', value: stats.passed },
+    { label: 'In the list', value: stats.selected },
+    { label: 'Rejected', value: stats.rejected },
+    { label: 'API units used', value: stats.unitsUsed },
   ];
-  if (unitsUsedToday !== null) {
-    summary.push({ label: 'API units left today', value: count(unitsLeft(unitsUsedToday)) });
+  if (stats.unitsLeftToday !== null) {
+    summary.push({ label: 'API units left today', value: stats.unitsLeftToday });
   }
   return {
     hasFetch: true,
+    stats,
     summary,
     items: log.itemsPicked.map((item) => ({
       itemId: item.itemId,

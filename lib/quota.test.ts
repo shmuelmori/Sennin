@@ -5,6 +5,7 @@ import {
   pacificDate,
   pacificDayNumber,
   pacificOffsetHours,
+  quotaUsedPercent,
   unitsLeft,
 } from './quota';
 
@@ -47,6 +48,20 @@ describe('pacificDayNumber', () => {
     const morning = pacificDayNumber(utc('2026-11-08T16:00:00'));
     expect(pacificDayNumber(utc('2026-11-09T07:59:00'))).toBe(morning);
     expect(pacificDayNumber(utc('2026-11-09T08:00:00'))).toBe(morning + 1);
+  });
+});
+
+describe('quotaUsedPercent', () => {
+  it('rounds today’s used share to a whole percent', () => {
+    expect(quotaUsedPercent(0)).toBe(0);
+    expect(quotaUsedPercent(2010)).toBe(20);
+    expect(quotaUsedPercent(4050)).toBe(41);
+    expect(quotaUsedPercent(DAILY_QUOTA)).toBe(100);
+  });
+
+  it('stays between 0 and 100', () => {
+    expect(quotaUsedPercent(-5)).toBe(0);
+    expect(quotaUsedPercent(12_000)).toBe(100);
   });
 });
 

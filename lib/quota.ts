@@ -48,6 +48,12 @@ export function unitsLeft(unitsUsedToday: number): number {
   return Math.max(0, DAILY_QUOTA - unitsUsedToday);
 }
 
+/** Today's used share of the daily quota, as a whole percent from 0 to 100. */
+export function quotaUsedPercent(unitsUsedToday: number): number {
+  const share = Math.min(1, Math.max(0, unitsUsedToday / DAILY_QUOTA));
+  return Math.round(share * 100);
+}
+
 /** Whether there is enough quota left today for a fetch. */
 export function canFetch(unitsUsedToday: number): boolean {
   return unitsLeft(unitsUsedToday) >= MIN_UNITS_TO_FETCH;

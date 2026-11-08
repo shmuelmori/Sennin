@@ -113,10 +113,29 @@ describe('buildStatusReport', () => {
     expect(report.error).toBeNull();
   });
 
+  it('gives the same numbers as stats for the Refresh tab', () => {
+    const report = buildStatusReport(log({ rejected: REJECTED }), NOW, 4020);
+    if (!report.hasFetch) throw new Error('expected a fetch');
+    expect(report.stats).toEqual({
+      fetchedAt: 'Today 14:32 (5 min ago)',
+      duration: '12.4 s',
+      topicsDrawn: '2',
+      fetched: '100',
+      passed: '97',
+      selected: '5',
+      rejected: '3',
+      unitsUsed: '2,010',
+      unitsLeftToday: '5,980',
+      usedTodayPercent: 40,
+    });
+  });
+
   it('leaves out the units left when today’s count is unknown', () => {
     const report = buildStatusReport(log(), NOW, null);
     if (!report.hasFetch) throw new Error('expected a fetch');
     expect(report.summary.map((row) => row.label)).not.toContain('API units left today');
+    expect(report.stats.unitsLeftToday).toBeNull();
+    expect(report.stats.usedTodayPercent).toBeNull();
   });
 
   it('lists each drawn item and flags one that gave no video', () => {
