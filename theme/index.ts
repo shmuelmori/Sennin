@@ -6,13 +6,13 @@ export const colors = {
   deepSeaNight: '#0E2A2F',
   /** Primary buttons ("Refresh"), active states, progress. Text on it: deepSeaNight, bold. */
   sunset: '#E0533A',
-  /** Secondary buttons, topic tags, dividers. Text on it: deepSeaNight, bold. */
+  /** Secondary buttons and dividers. Text on it: deepSeaNight, bold. */
   tealMist: '#2F8F8A',
-  /** Small highlights: the channel name above the video, icons, sakura. As text, only on deepSeaNight. */
+  /** Small highlights: the item name above the video, icons, sakura. As text, only on deepSeaNight. */
   cherryBlossom: '#F3C6C8',
   /** Body text and titles. Only on deepSeaNight. */
   silver: '#DCDFDE',
-  /** Silver at 65% opacity: placeholders and hints. Only on deepSeaNight. */
+  /** Silver at 65% opacity: placeholders, hints and removed topics. Only on deepSeaNight. */
   silverMuted: '#DCDFDEA6',
 } as const;
 
@@ -36,14 +36,16 @@ export const radius = {
 export const sizes = {
   /**
    * Smallest height of the strip above a feed video (padding, one line of
-   * channel name, two lines of title).
+   * item name, two lines of title).
    */
   feedInfoMinHeight: 84,
   /** The large Refresh button in the middle of the Refresh tab. */
   refreshButtonWidth: 220,
   refreshButtonHeight: 64,
-  /** The round trash button on a Sources card: a comfortable touch target. */
-  trashButton: 44,
+  /** The remove button in the feed strip. Its hit area is larger (hitSlop). */
+  removeIcon: 24,
+  /** The round + button in the Topics header: a comfortable touch target. */
+  addButton: 40,
 } as const;
 
 export const fontSize = {

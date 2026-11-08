@@ -7,24 +7,33 @@ export type StatusRowItem = {
   value: string;
   /** Shown muted, e.g. a rule that rejected nothing. */
   muted?: boolean;
+  /** Shown in Cherry Blossom, e.g. a topic that gave no video. */
+  flagged?: boolean;
 };
 
 type Props = {
   heading: string;
+  /** A short line under the heading, e.g. what the values mean. */
+  note?: string;
   rows: readonly StatusRowItem[];
 };
 
 // A heading and label/value rows for the Status screen. The row direction and
 // text alignment follow the phone's layout direction, so it reads naturally
 // in right-to-left as well as left-to-right.
-export function StatusRows({ heading, rows }: Props) {
+export function StatusRows({ heading, note, rows }: Props) {
   return (
     <View style={styles.section}>
       <Text style={styles.heading}>{heading}</Text>
-      {rows.map((row) => (
-        <View key={row.label} style={styles.row}>
-          <Text style={[styles.label, row.muted && styles.muted]}>{row.label}</Text>
-          <Text style={[styles.value, row.muted && styles.muted]}>{row.value}</Text>
+      {note !== undefined && <Text style={styles.note}>{note}</Text>}
+      {rows.map((row, index) => (
+        <View key={`${index}-${row.label}`} style={styles.row}>
+          <Text style={[styles.label, row.muted && styles.muted, row.flagged && styles.flagged]}>
+            {row.label}
+          </Text>
+          <Text style={[styles.value, row.muted && styles.muted, row.flagged && styles.flagged]}>
+            {row.value}
+          </Text>
         </View>
       ))}
     </View>
@@ -59,5 +68,12 @@ const styles = StyleSheet.create({
   muted: {
     color: colors.silverMuted,
     fontWeight: 'normal',
+  },
+  flagged: {
+    color: colors.cherryBlossom,
+  },
+  note: {
+    color: colors.silverMuted,
+    fontSize: fontSize.small,
   },
 });

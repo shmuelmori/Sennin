@@ -6,10 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FeedPager } from '@/components/FeedPager';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
+import { UndoToast } from '@/components/UndoToast';
 import { useFeed } from '@/hooks/useFeed';
+import { useItemRemoval } from '@/hooks/useItemRemoval';
 import { useSwitchTimer } from '@/hooks/useSwitchTimer';
 import { toFeedPages } from '@/lib/feedPages';
 import { feedPageLayout, type Size } from '@/lib/feedPaging';
+import type { FeedItem } from '@/lib/records';
 import { colors, sizes, spacing } from '@/theme';
 
 /** The page on screen, tied to the list it belongs to. */
@@ -18,9 +21,10 @@ type Position = { version: number; index: number };
 // Feed screen (spec §4, steps 7.1 to 7.5): the saved list from feed_item as
 // a vertical paging feed, opening on the first unwatched video. A video that
 // can't play is replaced from the reserve (F8), and one that has played for
-// half its length is saved as watched (F9). A Refresh on the Refresh tab
-// saves a new list, and the feed starts over at its first video. Nothing
-// plays while another tab is open.
+// half its length is saved as watched (F9). The strip's remove button takes
+// the video's item out of later fetches, with "Undo" for 5 seconds (F3). A
+// Refresh on the Refresh tab saves a new list, and the feed starts over at
+// its first video. Nothing plays while another tab is open.
 export default function FeedScreen() {
   const router = useRouter();
   const focused = useIsFocused();
@@ -28,6 +32,9 @@ export default function FeedScreen() {
   const [position, setPosition] = useState<Position | null>(null);
   const switchTimer = useSwitchTimer();
   const { state, onPlayerError, onPlaybackChange } = useFeed();
+  const { removedIds, undo, removeItem, undoRemove } = useItemRemoval();
+  // Stable, so the memoized pages don't all re-render on every swipe.
+  const onRemoveItem = useCallback((item: FeedItem) => void removeItem(item), [removeItem]);
   const { onPlaying } = switchTimer;
 
   const onPlayerStateChange = useCallback(
@@ -38,7 +45,7 @@ export default function FeedScreen() {
     [onPlaying, onPlaybackChange],
   );
 
-  // The channel name and title sit in a strip at the top of each page, the
+  // The item name and title sit in a strip at the top of each page, the
   // player below it, down to the tab bar.
   const layout = useMemo(
     () => (pageSize ? feedPageLayout(pageSize, sizes.feedInfoMinHeight) : null),
@@ -98,6 +105,8 @@ export default function FeedScreen() {
         onDragEnd={switchTimer.onDragEnd}
         onPlayerError={onPlayerError}
         onPlaybackChange={onPlayerStateChange}
+        removedIds={removedIds}
+        onRemoveItem={onRemoveItem}
       />
     );
   }
@@ -106,6 +115,14 @@ export default function FeedScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.container} onLayout={onLayout}>
         {body}
+        {undo !== null && layout !== null && (
+          <UndoToast
+            key={undo.itemId}
+            message={`${undo.name} won't be drawn again.`}
+            onUndo={() => void undoRemove()}
+            height={layout.infoHeight}
+          />
+        )}
       </View>
     </SafeAreaView>
   );

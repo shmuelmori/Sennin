@@ -52,8 +52,8 @@ export default function RootLayout() {
               }}
             />
             <Tabs.Screen
-              name="sources"
-              options={{ title: 'Sources', tabBarIcon: tabIcon('albums-outline', 'albums') }}
+              name="topics"
+              options={{ title: 'Topics', tabBarIcon: tabIcon('pricetags-outline', 'pricetags') }}
             />
             <Tabs.Screen
               name="refresh"

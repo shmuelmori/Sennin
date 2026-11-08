@@ -12,8 +12,10 @@ type Props = {
 };
 
 // The last fetch's report (spec §4, F11): time, duration, counts and units,
-// every rule in the §5 order with what it rejected, and any error. The Status
-// and Refresh tabs both show it. The parent lays the sections out.
+// each drawn topic with its results, passed and selected videos (a topic
+// that gave none is flagged), every rule in the §5 order with what it
+// rejected, and any error. The Status and Refresh tabs both show it. The
+// parent lays the sections out.
 export function FetchReport({ state, emptyText }: Props) {
   switch (state.status) {
     case 'loading':
@@ -28,6 +30,16 @@ export function FetchReport({ state, emptyText }: Props) {
       return (
         <>
           <StatusRows heading="Last fetch" rows={report.summary} />
+          {report.items.length > 0 && (
+            <>
+              <Divider />
+              <StatusRows
+                heading="Topics drawn"
+                note="Results / passed / in the list"
+                rows={report.items}
+              />
+            </>
+          )}
           <Divider />
           <StatusRows
             heading="Rejected by rule"

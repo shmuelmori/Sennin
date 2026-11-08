@@ -19,6 +19,7 @@ import {
   snapTargetIndex,
 } from '@/lib/feedPaging';
 import { assignSlots } from '@/lib/playerSlots';
+import type { FeedItem } from '@/lib/records';
 
 type Props = {
   pages: readonly FeedPage[];
@@ -33,6 +34,9 @@ type Props = {
   onDragEnd: () => void;
   onPlayerError: (videoId: string, error: string) => void;
   onPlaybackChange: (videoId: string, playing: boolean) => void;
+  /** Removed items: their videos show no remove button. */
+  removedIds: ReadonlySet<number>;
+  onRemoveItem: (item: FeedItem) => void;
 };
 
 // The vertical paging feed (§3, §4, F7): one video per page, then the
@@ -53,6 +57,8 @@ export function FeedPager({
   onDragEnd,
   onPlayerError,
   onPlaybackChange,
+  removedIds,
+  onRemoveItem,
 }: Props) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const openedAtStart = useRef(false);
@@ -113,8 +119,9 @@ export function FeedPager({
         page.kind === 'video' ? (
           <ShortPage
             key={feedPageKey(page)}
-            channelTitle={page.item.channelTitle}
-            title={page.item.title}
+            item={page.item}
+            removable={!removedIds.has(page.item.itemId)}
+            onRemoveItem={onRemoveItem}
             pageSize={pageSize}
             layout={layout}
           />

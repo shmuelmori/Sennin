@@ -1,33 +1,51 @@
-import { StyleSheet, Text, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { textDirection } from '@/lib/textDirection';
-import { colors, fontSize, spacing } from '@/theme';
+import { colors, fontSize, sizes, spacing } from '@/theme';
 
 type Props = {
-  channelTitle: string;
+  itemName: string;
   title: string;
   height: number;
+  /** False once the item is removed (or deleted), so the button hides. */
+  removable: boolean;
+  onRemove: () => void;
 };
 
-// The strip above a feed video (§4): channel name and title. It ends where
-// the player starts, so it never covers the player. Each line takes the
-// direction of its own text (step 9.3), so a Hebrew title starts on the right
-// and an English one on the left, whatever the phone's language.
-export function ShortInfo({ channelTitle, title, height }: Props) {
+// The strip above a feed video (§4): the item name, the title under it, and a
+// small remove button at the side. It ends where the player starts, so it
+// never covers the player. Each line takes the direction of its own text
+// (step 9.3), so a Hebrew title starts on the right and an English one on the
+// left, whatever the phone's language.
+export function ShortInfo({ itemName, title, height, removable, onRemove }: Props) {
   return (
     <View style={[styles.strip, { height }]}>
-      <Text
-        style={[styles.channel, { direction: textDirection(channelTitle) ?? 'inherit' }]}
-        numberOfLines={1}
-      >
-        {channelTitle}
-      </Text>
-      <Text
-        style={[styles.title, { direction: textDirection(title) ?? 'inherit' }]}
-        numberOfLines={2}
-      >
-        {title}
-      </Text>
+      <View style={styles.text}>
+        <Text
+          style={[styles.item, { direction: textDirection(itemName) ?? 'inherit' }]}
+          numberOfLines={1}
+        >
+          {itemName}
+        </Text>
+        <Text
+          style={[styles.title, { direction: textDirection(title) ?? 'inherit' }]}
+          numberOfLines={2}
+        >
+          {title}
+        </Text>
+      </View>
+      {removable && (
+        <Pressable
+          accessibilityLabel={`Remove ${itemName} from future lists`}
+          accessibilityRole="button"
+          hitSlop={spacing.sm}
+          onPress={onRemove}
+          style={({ pressed }) => [styles.remove, pressed && styles.pressed]}
+        >
+          <Ionicons name="remove-circle-outline" color={colors.cherryBlossom} size={sizes.removeIcon} />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -35,13 +53,19 @@ export function ShortInfo({ channelTitle, title, height }: Props) {
 const styles = StyleSheet.create({
   strip: {
     alignSelf: 'stretch',
-    gap: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     overflow: 'hidden',
     backgroundColor: colors.deepSeaNight,
   },
-  channel: {
+  text: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  item: {
     color: colors.cherryBlossom,
     fontSize: fontSize.small,
     fontWeight: 'bold',
@@ -49,5 +73,11 @@ const styles = StyleSheet.create({
   title: {
     color: colors.silver,
     fontSize: fontSize.body,
+  },
+  remove: {
+    padding: spacing.xs,
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });
