@@ -1,6 +1,6 @@
 # Sennin
 
-Android POC (React Native + Expo, TypeScript). Tapping "Refresh" builds a feed of 15 educational YouTube Shorts from hand-picked channels, and the user swipes through them in the official YouTube player. No server, no accounts, no cost.
+Android POC (React Native + Expo, TypeScript). Tapping "Refresh" draws 20 topics ("items") from a dynamic list in SQLite, searches YouTube for 5 English Shorts per item, and builds a feed of up to 100 videos that the user swipes through in the official YouTube player. No server, no accounts, no cost.
 
 The spec is the source of truth: `docs/Sennin – POC Specification.md`. Read the relevant section before building a feature. If a request contradicts the spec, say so before writing code, and update the spec when a decision changes.
 
@@ -20,8 +20,9 @@ Build progress is tracked in `docs/status.md`. Check it at the start of a sessio
 - The API key comes from `EXPO_PUBLIC_YOUTUBE_KEY` in `.env`. Never commit `.env` and never hard-code the key.
 
 ## YouTube Data API
-- Never call `search.list` (100 units per call). A full fetch must stay under 100 units.
-- Resolve an `@handle` with `channels.list` and `forHandle=`. Get the uploads playlist from `contentDetails.relatedPlaylists.uploads`.
+- `search.list` costs 100 units per call. Call it exactly once per drawn item (20 per fetch) and nowhere else. A full fetch costs about 2,010 units and must stay under 2,100 (spec §5).
+- Count every call's units in the daily `quota_day` counter, which resets at midnight Pacific Time. Refresh is disabled when fewer than 2,100 units are left today.
+- On `quotaExceeded`, stop the fetch, keep the previous feed and log the error.
 - Batch `videos.list` at 50 IDs per request.
 - The API has no "is a Short" field. Detect Shorts by duration ≤ 180 s (3 minutes, the YouTube Shorts limit) and height > width.
 - `player.embedWidth` and `player.embedHeight` are returned only when the request passes `maxWidth` or `maxHeight`.
@@ -35,10 +36,10 @@ Build progress is tracked in `docs/status.md`. Check it at the start of a sessio
 **Smart vs. dumb components:**
 - Screens in `app/` (Expo Router) are the only "smart" components: they call hooks (which read the DB and the API) and pass data down.
 - Components in `components/` are presentational: props in, JSX out. No fetch, no SQLite, no business logic. They may hold local UI state only (e.g. pressed, visible).
-- Data access and side effects live in custom hooks in `hooks/` (e.g. `useFeed`, `useChannels`), which screens consume.
+- Data access and side effects live in custom hooks in `hooks/` (e.g. `useFeed`, `useItems`), which screens consume.
 
 **Pure logic in `lib/`:**
-- All business logic is pure functions in `lib/`, with no React, no network and no DB imports. Examples: the filter rules (section 5), sorting, parsing ISO 8601 durations, parsing a channel link or @handle.
+- All business logic is pure functions in `lib/`, with no React, no network and no DB imports. Examples: the filter rules (section 5), sorting, parsing ISO 8601 durations, parsing comma-separated item input, the weighted item draw, and the shuffle that keeps two videos of the same item apart.
 - Each filter rule is its own function returning either pass or a rejection reason, so rejections can be logged (F5) and tested.
 - Every function in `lib/` has unit tests.
 
@@ -67,7 +68,7 @@ scripts/      dev tools, not part of the app (generate_art.py draws the art, ico
 ## UI
 - Define the palette from spec §11 once, in a theme file. Components import from it; no hex literals in components.
 - Text on Sunset (#E0533A) or Teal Mist (#2F8F8A) buttons is Deep Sea Night (#0E2A2F) and bold. Use Silver and Cherry Blossom only for text on Deep Sea Night.
-- The channel name and title sit in a strip above the player and never cover it or its controls. Decorative art (sakura, clouds) never goes over the player.
+- The item name and title sit in a strip above the player and never cover it or its controls. Decorative art (sakura, clouds) never goes over the player.
 - Use calm motion only: fades, no bounce or spring animations.
 - Text can be Hebrew or English, so don't hard-code left alignment.
 

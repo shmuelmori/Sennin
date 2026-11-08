@@ -26,7 +26,7 @@ Replace manual channel selection with a long, dynamic list of topics. Each day t
 - The list is dynamic and stored in the `item` table in SQLite. The DB is its single source of truth.
 - Each item has an ID, a name and an English search query.
 - **Initial list (seed):** a script that runs once, on the app's first launch when the table is empty, and inserts hundreds of items into the DB. After that it never runs again and has no other role.
-- The initial list has to be stored somewhere inside the app, so it is a plain data file (`src/db/seed.json`) that only the script reads.
+- The initial list has to be stored somewhere inside the app, so it is a plain data file (`db/seed.json`) that only the script reads.
 - Most items in the initial list are small and specific (octopus, iron, black holes), because a specific search returns more focused videos.
 
 ## 5. Topics tab (replaces Sources)
@@ -49,7 +49,7 @@ Replace manual channel selection with a long, dynamic list of topics. Each day t
 
 ## 6. The feed
 
-- The info strip under the video: the item name (e.g. "Octopus"), with the title below it. The channel name is dropped.
+- The info strip above the video: the item name (e.g. "Octopus"), with the title below it. The channel name is dropped.
 - A small remove button at the side of the strip.
 - Tapping the remove button marks the item as removed and shows a message with "Undo" for 5 seconds.
 - The removal applies from the next fetch. Videos of the item already in today's feed stay.
