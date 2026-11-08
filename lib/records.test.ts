@@ -1,9 +1,16 @@
 import type { RejectedVideo } from './filterRules';
-import { decodeRejections, encodeRejections, isFeedStatus } from './records';
+import {
+  decodeItemReports,
+  decodeRejections,
+  encodeItemReports,
+  encodeRejections,
+  isFeedStatus,
+  type ItemReport,
+} from './records';
 
 const rejected: RejectedVideo[] = [
   { videoId: 'abc', rule: 'length', detail: '240 s' },
-  { videoId: 'def', rule: 'keyword', detail: 'no topic keyword' },
+  { videoId: 'def', rule: 'queryMatch', detail: 'no word from "octopus"' },
   { videoId: 'ghi', rule: 'blockedWord', detail: 'מם "reacts to"' },
 ];
 
@@ -56,5 +63,33 @@ describe('isFeedStatus', () => {
     expect(isFeedStatus('')).toBe(false);
     expect(isFeedStatus('Watched')).toBe(false);
     expect(isFeedStatus('done')).toBe(false);
+  });
+});
+
+const reports: ItemReport[] = [
+  { itemId: 1, name: 'Octopus', results: 25, passed: 7, selected: 5, error: null },
+  { itemId: 2, name: 'חורים שחורים', results: 0, passed: 0, selected: 0, error: 'network' },
+];
+
+describe('encodeItemReports and decodeItemReports', () => {
+  it('round-trips a list, including Hebrew and an error', () => {
+    expect(decodeItemReports(encodeItemReports(reports))).toEqual(reports);
+  });
+
+  it('round-trips an empty list', () => {
+    expect(decodeItemReports(encodeItemReports([]))).toEqual([]);
+  });
+
+  it('stores only the report fields', () => {
+    const extra = [{ ...reports[0], query: 'not stored' }];
+    expect(JSON.parse(encodeItemReports(extra))).toEqual([reports[0]]);
+  });
+
+  it('rejects text that is not a list of reports', () => {
+    expect(decodeItemReports('')).toBeNull();
+    expect(decodeItemReports('{}')).toBeNull();
+    expect(decodeItemReports('[null]')).toBeNull();
+    expect(decodeItemReports('[{"itemId":1,"name":"a","results":-1,"passed":0,"selected":0,"error":null}]')).toBeNull();
+    expect(decodeItemReports('[{"itemId":1,"name":"a","results":1,"passed":0,"selected":0}]')).toBeNull();
   });
 });

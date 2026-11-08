@@ -4,7 +4,6 @@ import type { NewFetchLog } from '@/lib/records';
 
 import {
   FETCH_LOG_MAX_AGE_MS,
-  getLastCompletedFetchStart,
   getLatestFetchLog,
   insertFetchLog,
 } from './fetchLog';
@@ -25,13 +24,18 @@ afterEach(async () => {
 function log(startedAtMs: number): NewFetchLog {
   return {
     startedAtMs,
-    finishedAtMs: startedAtMs + 9_000,
+    durationMs: 9_000,
+    itemsPicked: [
+      { itemId: 1, name: 'Octopus', results: 25, passed: 9, selected: 5, error: null },
+      { itemId: 7, name: 'חורים שחורים', results: 0, passed: 0, selected: 0, error: 'network' },
+    ],
     fetched: 120,
+    passed: 118,
     rejected: [
       { videoId: 'a', rule: 'length', detail: '240 s' },
       { videoId: 'b', rule: 'vertical', detail: '1280x720' },
     ],
-    quotaUsed: 34,
+    quotaUsed: 2010,
     error: null,
   };
 }
@@ -47,9 +51,9 @@ describe('insertFetchLog and getLatestFetchLog', () => {
     expect(await getLatestFetchLog(db)).toEqual({ ...log(200), id: 2 });
   });
 
-  it('reads back a log with no end time as null', async () => {
-    await insertFetchLog(db, { ...log(100), finishedAtMs: null });
-    expect(await getLatestFetchLog(db)).toMatchObject({ startedAtMs: 100, finishedAtMs: null });
+  it('stores the duration as whole, non-negative milliseconds', async () => {
+    await insertFetchLog(db, { ...log(100), durationMs: -5 });
+    expect(await getLatestFetchLog(db)).toMatchObject({ durationMs: 0 });
   });
 
   it('keeps an error message', async () => {
@@ -99,29 +103,10 @@ describe('insertFetchLog and getLatestFetchLog', () => {
     await db.runAsync("UPDATE fetch_log SET rejectedByRule = 'oops'");
     await expect(getLatestFetchLog(db)).rejects.toThrow('unreadable rejectedByRule');
   });
-});
 
-describe('getLastCompletedFetchStart', () => {
-  it('returns null before the first fetch', async () => {
-    expect(await getLastCompletedFetchStart(db)).toBeNull();
-  });
-
-  it('returns the start of the latest fetch that checked videos', async () => {
+  it('throws if the stored item reports are unreadable', async () => {
     await insertFetchLog(db, log(100));
-    await insertFetchLog(db, log(200));
-    expect(await getLastCompletedFetchStart(db)).toBe(200);
-  });
-
-  it('skips fetches that checked no videos, such as failed ones', async () => {
-    await insertFetchLog(db, log(100));
-    await insertFetchLog(db, { ...log(200), fetched: 0, rejected: [], error: 'failed: quota' });
-    await insertFetchLog(db, { ...log(300), fetched: 0, rejected: [] });
-    expect(await getLastCompletedFetchStart(db)).toBe(100);
-  });
-
-  it('counts a fetch that skipped a channel but checked videos', async () => {
-    await insertFetchLog(db, log(100));
-    await insertFetchLog(db, { ...log(200), error: 'skipped Gone (UCgone): notFound' });
-    expect(await getLastCompletedFetchStart(db)).toBe(200);
+    await db.runAsync("UPDATE fetch_log SET itemsPicked = '{}'");
+    await expect(getLatestFetchLog(db)).rejects.toThrow('unreadable itemsPicked');
   });
 });

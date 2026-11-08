@@ -2,7 +2,14 @@
 
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { decodeRejections, encodeRejections, type FetchLog, type NewFetchLog } from '@/lib/records';
+import {
+  decodeItemReports,
+  decodeRejections,
+  encodeItemReports,
+  encodeRejections,
+  type FetchLog,
+  type NewFetchLog,
+} from '@/lib/records';
 
 /** Logs older than this are deleted, so the rejection lists don't pile up. */
 export const FETCH_LOG_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -10,8 +17,10 @@ export const FETCH_LOG_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 type FetchLogRow = {
   id: number;
   startedAt: number;
-  finishedAt: number | null;
+  durationMs: number;
+  itemsPicked: string;
   fetched: number;
+  passed: number;
   rejectedByRule: string;
   quotaUsed: number;
   error: string | null;
@@ -24,12 +33,15 @@ type FetchLogRow = {
 export async function insertFetchLog(db: SQLiteDatabase, log: NewFetchLog): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.runAsync(
-      `INSERT INTO fetch_log (startedAt, finishedAt, fetched, rejectedByRule, quotaUsed, error)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO fetch_log
+         (startedAt, durationMs, itemsPicked, fetched, passed, rejectedByRule, quotaUsed, error)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         log.startedAtMs,
-        log.finishedAtMs,
+        Math.max(0, Math.round(log.durationMs)),
+        encodeItemReports(log.itemsPicked),
         log.fetched,
+        log.passed,
         encodeRejections(log.rejected),
         log.quotaUsed,
         log.error,
@@ -41,23 +53,10 @@ export async function insertFetchLog(db: SQLiteDatabase, log: NewFetchLog): Prom
   });
 }
 
-/**
- * When the last completed fetch started, or null if none did. Videos published
- * after it count as new (§5 step 5). A fetch counts as completed once
- * videos.list answered: one that stopped on an error, or found nothing new to
- * check, has fetched = 0.
- */
-export async function getLastCompletedFetchStart(db: SQLiteDatabase): Promise<number | null> {
-  const row = await db.getFirstAsync<{ startedAt: number }>(
-    'SELECT startedAt FROM fetch_log WHERE fetched > 0 ORDER BY id DESC LIMIT 1',
-  );
-  return row?.startedAt ?? null;
-}
-
 /** The most recent fetch, or null if there was none. */
 export async function getLatestFetchLog(db: SQLiteDatabase): Promise<FetchLog | null> {
   const row = await db.getFirstAsync<FetchLogRow>(
-    `SELECT id, startedAt, finishedAt, fetched, rejectedByRule, quotaUsed, error
+    `SELECT id, startedAt, durationMs, itemsPicked, fetched, passed, rejectedByRule, quotaUsed, error
      FROM fetch_log ORDER BY id DESC LIMIT 1`,
   );
   if (row === null) {
@@ -67,11 +66,17 @@ export async function getLatestFetchLog(db: SQLiteDatabase): Promise<FetchLog | 
   if (rejected === null) {
     throw new Error(`fetch_log ${row.id} has an unreadable rejectedByRule`);
   }
+  const itemsPicked = decodeItemReports(row.itemsPicked);
+  if (itemsPicked === null) {
+    throw new Error(`fetch_log ${row.id} has an unreadable itemsPicked`);
+  }
   return {
     id: row.id,
     startedAtMs: row.startedAt,
-    finishedAtMs: row.finishedAt,
+    durationMs: row.durationMs,
+    itemsPicked,
     fetched: row.fetched,
+    passed: row.passed,
     rejected,
     quotaUsed: row.quotaUsed,
     error: row.error,

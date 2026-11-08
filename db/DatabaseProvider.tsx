@@ -10,7 +10,7 @@ async function onInit(db: SQLiteDatabase): Promise<void> {
   const summary = await readDatabaseSummary(db);
   console.log(
     `[db] ready: schema v${summary.schemaVersion}, tables: ${summary.tables.join(', ')}, ` +
-      `topics: ${summary.topicCount}`,
+      `items: ${summary.itemCount}`,
   );
 }
 

@@ -1,0 +1,1658 @@
+[
+  {
+    "name": "Octopus",
+    "query": "octopus"
+  },
+  {
+    "name": "Squid",
+    "query": "squid"
+  },
+  {
+    "name": "Cuttlefish",
+    "query": "cuttlefish"
+  },
+  {
+    "name": "Jellyfish",
+    "query": "jellyfish"
+  },
+  {
+    "name": "Sea turtles",
+    "query": "sea turtles"
+  },
+  {
+    "name": "Sharks",
+    "query": "sharks"
+  },
+  {
+    "name": "Great white shark",
+    "query": "great white shark"
+  },
+  {
+    "name": "Whale shark",
+    "query": "whale shark"
+  },
+  {
+    "name": "Blue whale",
+    "query": "blue whale"
+  },
+  {
+    "name": "Humpback whale",
+    "query": "humpback whale"
+  },
+  {
+    "name": "Orcas",
+    "query": "orcas"
+  },
+  {
+    "name": "Dolphins",
+    "query": "dolphins"
+  },
+  {
+    "name": "Manta rays",
+    "query": "manta rays"
+  },
+  {
+    "name": "Seahorses",
+    "query": "seahorses"
+  },
+  {
+    "name": "Coral reefs",
+    "query": "coral reefs"
+  },
+  {
+    "name": "Anglerfish",
+    "query": "anglerfish"
+  },
+  {
+    "name": "Pufferfish",
+    "query": "pufferfish"
+  },
+  {
+    "name": "Starfish",
+    "query": "starfish"
+  },
+  {
+    "name": "Sea urchins",
+    "query": "sea urchins"
+  },
+  {
+    "name": "Mantis shrimp",
+    "query": "mantis shrimp"
+  },
+  {
+    "name": "Hermit crabs",
+    "query": "hermit crabs"
+  },
+  {
+    "name": "Lobsters",
+    "query": "lobsters"
+  },
+  {
+    "name": "Sea otters",
+    "query": "sea otters"
+  },
+  {
+    "name": "Narwhals",
+    "query": "narwhals"
+  },
+  {
+    "name": "Deep sea creatures",
+    "query": "deep sea creatures"
+  },
+  {
+    "name": "Mariana Trench",
+    "query": "mariana trench"
+  },
+  {
+    "name": "Tides",
+    "query": "tides"
+  },
+  {
+    "name": "Tsunamis",
+    "query": "tsunamis"
+  },
+  {
+    "name": "Elephants",
+    "query": "elephants"
+  },
+  {
+    "name": "Giraffes",
+    "query": "giraffes"
+  },
+  {
+    "name": "Cheetahs",
+    "query": "cheetahs"
+  },
+  {
+    "name": "Lions",
+    "query": "lions"
+  },
+  {
+    "name": "Tigers",
+    "query": "tigers"
+  },
+  {
+    "name": "Snow leopards",
+    "query": "snow leopards"
+  },
+  {
+    "name": "Wolves",
+    "query": "wolves"
+  },
+  {
+    "name": "Foxes",
+    "query": "foxes"
+  },
+  {
+    "name": "Bears",
+    "query": "bears"
+  },
+  {
+    "name": "Pandas",
+    "query": "pandas"
+  },
+  {
+    "name": "Koalas",
+    "query": "koalas"
+  },
+  {
+    "name": "Kangaroos",
+    "query": "kangaroos"
+  },
+  {
+    "name": "Platypus",
+    "query": "platypus"
+  },
+  {
+    "name": "Sloths",
+    "query": "sloths"
+  },
+  {
+    "name": "Gorillas",
+    "query": "gorillas"
+  },
+  {
+    "name": "Chimpanzees",
+    "query": "chimpanzees"
+  },
+  {
+    "name": "Orangutans",
+    "query": "orangutans"
+  },
+  {
+    "name": "Bats",
+    "query": "bats"
+  },
+  {
+    "name": "Owls",
+    "query": "owls"
+  },
+  {
+    "name": "Eagles",
+    "query": "eagles"
+  },
+  {
+    "name": "Hummingbirds",
+    "query": "hummingbirds"
+  },
+  {
+    "name": "Penguins",
+    "query": "penguins"
+  },
+  {
+    "name": "Parrots",
+    "query": "parrots"
+  },
+  {
+    "name": "Crows",
+    "query": "crows"
+  },
+  {
+    "name": "Flamingos",
+    "query": "flamingos"
+  },
+  {
+    "name": "Chameleons",
+    "query": "chameleons"
+  },
+  {
+    "name": "Komodo dragons",
+    "query": "komodo dragons"
+  },
+  {
+    "name": "Crocodiles",
+    "query": "crocodiles"
+  },
+  {
+    "name": "Snakes",
+    "query": "snakes"
+  },
+  {
+    "name": "Frogs",
+    "query": "frogs"
+  },
+  {
+    "name": "Axolotls",
+    "query": "axolotls"
+  },
+  {
+    "name": "Tardigrades",
+    "query": "tardigrades"
+  },
+  {
+    "name": "Honeybees",
+    "query": "honeybees"
+  },
+  {
+    "name": "Ants",
+    "query": "ants"
+  },
+  {
+    "name": "Termites",
+    "query": "termites"
+  },
+  {
+    "name": "Butterflies",
+    "query": "butterflies"
+  },
+  {
+    "name": "Dragonflies",
+    "query": "dragonflies"
+  },
+  {
+    "name": "Spiders",
+    "query": "spiders"
+  },
+  {
+    "name": "Scorpions",
+    "query": "scorpions"
+  },
+  {
+    "name": "Fireflies",
+    "query": "fireflies"
+  },
+  {
+    "name": "Mosquitoes",
+    "query": "mosquitoes"
+  },
+  {
+    "name": "Camels",
+    "query": "camels"
+  },
+  {
+    "name": "Horses",
+    "query": "horses"
+  },
+  {
+    "name": "Cats",
+    "query": "cats"
+  },
+  {
+    "name": "Dogs",
+    "query": "dogs"
+  },
+  {
+    "name": "Hedgehogs",
+    "query": "hedgehogs"
+  },
+  {
+    "name": "Beavers",
+    "query": "beavers"
+  },
+  {
+    "name": "Capybaras",
+    "query": "capybaras"
+  },
+  {
+    "name": "Human heart",
+    "query": "human heart"
+  },
+  {
+    "name": "Human brain",
+    "query": "human brain"
+  },
+  {
+    "name": "Neurons",
+    "query": "neurons"
+  },
+  {
+    "name": "Memory",
+    "query": "memory"
+  },
+  {
+    "name": "Sleep",
+    "query": "sleep"
+  },
+  {
+    "name": "Dreams",
+    "query": "dreams"
+  },
+  {
+    "name": "Eyes",
+    "query": "eyes"
+  },
+  {
+    "name": "Ears",
+    "query": "ears"
+  },
+  {
+    "name": "Skin",
+    "query": "skin"
+  },
+  {
+    "name": "Bones",
+    "query": "bones"
+  },
+  {
+    "name": "Muscles",
+    "query": "muscles"
+  },
+  {
+    "name": "Blood",
+    "query": "blood"
+  },
+  {
+    "name": "Immune system",
+    "query": "immune system"
+  },
+  {
+    "name": "Vaccines",
+    "query": "vaccines"
+  },
+  {
+    "name": "Antibiotics",
+    "query": "antibiotics"
+  },
+  {
+    "name": "Bacteria",
+    "query": "bacteria"
+  },
+  {
+    "name": "Viruses",
+    "query": "viruses"
+  },
+  {
+    "name": "Gut bacteria",
+    "query": "gut bacteria"
+  },
+  {
+    "name": "DNA",
+    "query": "dna"
+  },
+  {
+    "name": "Genes",
+    "query": "genes"
+  },
+  {
+    "name": "CRISPR",
+    "query": "crispr"
+  },
+  {
+    "name": "Stem cells",
+    "query": "stem cells"
+  },
+  {
+    "name": "Cancer",
+    "query": "cancer"
+  },
+  {
+    "name": "Allergies",
+    "query": "allergies"
+  },
+  {
+    "name": "Hiccups",
+    "query": "hiccups"
+  },
+  {
+    "name": "Yawning",
+    "query": "yawning"
+  },
+  {
+    "name": "Fingerprints",
+    "query": "fingerprints"
+  },
+  {
+    "name": "Taste buds",
+    "query": "taste buds"
+  },
+  {
+    "name": "Adrenaline",
+    "query": "adrenaline"
+  },
+  {
+    "name": "Dopamine",
+    "query": "dopamine"
+  },
+  {
+    "name": "Iron",
+    "query": "iron"
+  },
+  {
+    "name": "Gold",
+    "query": "gold"
+  },
+  {
+    "name": "Silver",
+    "query": "silver"
+  },
+  {
+    "name": "Copper",
+    "query": "copper"
+  },
+  {
+    "name": "Aluminum",
+    "query": "aluminum"
+  },
+  {
+    "name": "Lithium",
+    "query": "lithium"
+  },
+  {
+    "name": "Sodium",
+    "query": "sodium"
+  },
+  {
+    "name": "Mercury",
+    "query": "mercury"
+  },
+  {
+    "name": "Uranium",
+    "query": "uranium"
+  },
+  {
+    "name": "Carbon",
+    "query": "carbon"
+  },
+  {
+    "name": "Oxygen",
+    "query": "oxygen"
+  },
+  {
+    "name": "Hydrogen",
+    "query": "hydrogen"
+  },
+  {
+    "name": "Helium",
+    "query": "helium"
+  },
+  {
+    "name": "Nitrogen",
+    "query": "nitrogen"
+  },
+  {
+    "name": "Periodic table",
+    "query": "periodic table"
+  },
+  {
+    "name": "Atoms",
+    "query": "atoms"
+  },
+  {
+    "name": "Electrons",
+    "query": "electrons"
+  },
+  {
+    "name": "Chemical reactions",
+    "query": "chemical reactions"
+  },
+  {
+    "name": "Acids and bases",
+    "query": "acids and bases"
+  },
+  {
+    "name": "Salt",
+    "query": "salt"
+  },
+  {
+    "name": "Water",
+    "query": "water"
+  },
+  {
+    "name": "Ice",
+    "query": "ice"
+  },
+  {
+    "name": "Fire",
+    "query": "fire"
+  },
+  {
+    "name": "Rust",
+    "query": "rust"
+  },
+  {
+    "name": "Plastic",
+    "query": "plastic"
+  },
+  {
+    "name": "Glass",
+    "query": "glass"
+  },
+  {
+    "name": "Diamonds",
+    "query": "diamonds"
+  },
+  {
+    "name": "Crystals",
+    "query": "crystals"
+  },
+  {
+    "name": "Magnets",
+    "query": "magnets"
+  },
+  {
+    "name": "Batteries",
+    "query": "batteries"
+  },
+  {
+    "name": "Gravity",
+    "query": "gravity"
+  },
+  {
+    "name": "Light",
+    "query": "light"
+  },
+  {
+    "name": "Speed of light",
+    "query": "speed of light"
+  },
+  {
+    "name": "Sound",
+    "query": "sound"
+  },
+  {
+    "name": "Electricity",
+    "query": "electricity"
+  },
+  {
+    "name": "Lightning",
+    "query": "lightning"
+  },
+  {
+    "name": "Static electricity",
+    "query": "static electricity"
+  },
+  {
+    "name": "Friction",
+    "query": "friction"
+  },
+  {
+    "name": "Momentum",
+    "query": "momentum"
+  },
+  {
+    "name": "Energy",
+    "query": "energy"
+  },
+  {
+    "name": "Heat",
+    "query": "heat"
+  },
+  {
+    "name": "Temperature",
+    "query": "temperature"
+  },
+  {
+    "name": "Entropy",
+    "query": "entropy"
+  },
+  {
+    "name": "Relativity",
+    "query": "relativity"
+  },
+  {
+    "name": "Time dilation",
+    "query": "time dilation"
+  },
+  {
+    "name": "Quantum mechanics",
+    "query": "quantum mechanics"
+  },
+  {
+    "name": "Quantum entanglement",
+    "query": "quantum entanglement"
+  },
+  {
+    "name": "Lasers",
+    "query": "lasers"
+  },
+  {
+    "name": "Radioactivity",
+    "query": "radioactivity"
+  },
+  {
+    "name": "Nuclear fusion",
+    "query": "nuclear fusion"
+  },
+  {
+    "name": "Nuclear fission",
+    "query": "nuclear fission"
+  },
+  {
+    "name": "Waves",
+    "query": "waves"
+  },
+  {
+    "name": "Rainbows",
+    "query": "rainbows"
+  },
+  {
+    "name": "Mirrors",
+    "query": "mirrors"
+  },
+  {
+    "name": "Lenses",
+    "query": "lenses"
+  },
+  {
+    "name": "Pendulums",
+    "query": "pendulums"
+  },
+  {
+    "name": "Levers",
+    "query": "levers"
+  },
+  {
+    "name": "Buoyancy",
+    "query": "buoyancy"
+  },
+  {
+    "name": "Air pressure",
+    "query": "air pressure"
+  },
+  {
+    "name": "Vacuum",
+    "query": "vacuum"
+  },
+  {
+    "name": "Black holes",
+    "query": "black holes"
+  },
+  {
+    "name": "Neutron stars",
+    "query": "neutron stars"
+  },
+  {
+    "name": "Supernovas",
+    "query": "supernovas"
+  },
+  {
+    "name": "The Sun",
+    "query": "the sun"
+  },
+  {
+    "name": "The Moon",
+    "query": "the moon"
+  },
+  {
+    "name": "Mercury planet",
+    "query": "mercury planet"
+  },
+  {
+    "name": "Venus",
+    "query": "venus"
+  },
+  {
+    "name": "Mars",
+    "query": "mars"
+  },
+  {
+    "name": "Jupiter",
+    "query": "jupiter"
+  },
+  {
+    "name": "Saturn",
+    "query": "saturn"
+  },
+  {
+    "name": "Saturn rings",
+    "query": "saturn rings"
+  },
+  {
+    "name": "Uranus planet",
+    "query": "uranus planet"
+  },
+  {
+    "name": "Neptune",
+    "query": "neptune"
+  },
+  {
+    "name": "Pluto",
+    "query": "pluto"
+  },
+  {
+    "name": "Comets",
+    "query": "comets"
+  },
+  {
+    "name": "Asteroids",
+    "query": "asteroids"
+  },
+  {
+    "name": "Meteorites",
+    "query": "meteorites"
+  },
+  {
+    "name": "Galaxies",
+    "query": "galaxies"
+  },
+  {
+    "name": "Milky Way",
+    "query": "milky way"
+  },
+  {
+    "name": "Andromeda galaxy",
+    "query": "andromeda galaxy"
+  },
+  {
+    "name": "Dark matter",
+    "query": "dark matter"
+  },
+  {
+    "name": "Dark energy",
+    "query": "dark energy"
+  },
+  {
+    "name": "Big Bang",
+    "query": "big bang"
+  },
+  {
+    "name": "Exoplanets",
+    "query": "exoplanets"
+  },
+  {
+    "name": "Eclipses",
+    "query": "eclipses"
+  },
+  {
+    "name": "Auroras",
+    "query": "auroras"
+  },
+  {
+    "name": "Space station",
+    "query": "space station"
+  },
+  {
+    "name": "Astronauts",
+    "query": "astronauts"
+  },
+  {
+    "name": "Apollo 11",
+    "query": "apollo 11"
+  },
+  {
+    "name": "James Webb telescope",
+    "query": "james webb telescope"
+  },
+  {
+    "name": "Hubble telescope",
+    "query": "hubble telescope"
+  },
+  {
+    "name": "Rockets",
+    "query": "rockets"
+  },
+  {
+    "name": "Satellites",
+    "query": "satellites"
+  },
+  {
+    "name": "Mars rovers",
+    "query": "mars rovers"
+  },
+  {
+    "name": "Volcanoes",
+    "query": "volcanoes"
+  },
+  {
+    "name": "Earthquakes",
+    "query": "earthquakes"
+  },
+  {
+    "name": "Plate tectonics",
+    "query": "plate tectonics"
+  },
+  {
+    "name": "Mountains",
+    "query": "mountains"
+  },
+  {
+    "name": "Glaciers",
+    "query": "glaciers"
+  },
+  {
+    "name": "Icebergs",
+    "query": "icebergs"
+  },
+  {
+    "name": "Deserts",
+    "query": "deserts"
+  },
+  {
+    "name": "Rainforests",
+    "query": "rainforests"
+  },
+  {
+    "name": "Caves",
+    "query": "caves"
+  },
+  {
+    "name": "Canyons",
+    "query": "canyons"
+  },
+  {
+    "name": "Rivers",
+    "query": "rivers"
+  },
+  {
+    "name": "Waterfalls",
+    "query": "waterfalls"
+  },
+  {
+    "name": "Clouds",
+    "query": "clouds"
+  },
+  {
+    "name": "Tornadoes",
+    "query": "tornadoes"
+  },
+  {
+    "name": "Hurricanes",
+    "query": "hurricanes"
+  },
+  {
+    "name": "Snowflakes",
+    "query": "snowflakes"
+  },
+  {
+    "name": "Hail",
+    "query": "hail"
+  },
+  {
+    "name": "Fog",
+    "query": "fog"
+  },
+  {
+    "name": "Wind",
+    "query": "wind"
+  },
+  {
+    "name": "Climate",
+    "query": "climate"
+  },
+  {
+    "name": "Ocean currents",
+    "query": "ocean currents"
+  },
+  {
+    "name": "Fossils",
+    "query": "fossils"
+  },
+  {
+    "name": "Dinosaurs",
+    "query": "dinosaurs"
+  },
+  {
+    "name": "T. rex",
+    "query": "t. rex"
+  },
+  {
+    "name": "Mammoths",
+    "query": "mammoths"
+  },
+  {
+    "name": "Ice age",
+    "query": "ice age"
+  },
+  {
+    "name": "Amber",
+    "query": "amber"
+  },
+  {
+    "name": "Geysers",
+    "query": "geysers"
+  },
+  {
+    "name": "Quicksand",
+    "query": "quicksand"
+  },
+  {
+    "name": "Sand dunes",
+    "query": "sand dunes"
+  },
+  {
+    "name": "Trees",
+    "query": "trees"
+  },
+  {
+    "name": "Redwoods",
+    "query": "redwoods"
+  },
+  {
+    "name": "Bamboo",
+    "query": "bamboo"
+  },
+  {
+    "name": "Mushrooms",
+    "query": "mushrooms"
+  },
+  {
+    "name": "Fungi",
+    "query": "fungi"
+  },
+  {
+    "name": "Moss",
+    "query": "moss"
+  },
+  {
+    "name": "Cactus",
+    "query": "cactus"
+  },
+  {
+    "name": "Carnivorous plants",
+    "query": "carnivorous plants"
+  },
+  {
+    "name": "Venus flytrap",
+    "query": "venus flytrap"
+  },
+  {
+    "name": "Sunflowers",
+    "query": "sunflowers"
+  },
+  {
+    "name": "Roses",
+    "query": "roses"
+  },
+  {
+    "name": "Photosynthesis",
+    "query": "photosynthesis"
+  },
+  {
+    "name": "Seeds",
+    "query": "seeds"
+  },
+  {
+    "name": "Pollination",
+    "query": "pollination"
+  },
+  {
+    "name": "Coffee",
+    "query": "coffee"
+  },
+  {
+    "name": "Tea",
+    "query": "tea"
+  },
+  {
+    "name": "Chocolate",
+    "query": "chocolate"
+  },
+  {
+    "name": "Bananas",
+    "query": "bananas"
+  },
+  {
+    "name": "Potatoes",
+    "query": "potatoes"
+  },
+  {
+    "name": "Rice",
+    "query": "rice"
+  },
+  {
+    "name": "Wheat",
+    "query": "wheat"
+  },
+  {
+    "name": "Corn",
+    "query": "corn"
+  },
+  {
+    "name": "Tomatoes",
+    "query": "tomatoes"
+  },
+  {
+    "name": "Chili peppers",
+    "query": "chili peppers"
+  },
+  {
+    "name": "Garlic",
+    "query": "garlic"
+  },
+  {
+    "name": "Claude Code",
+    "query": "claude code"
+  },
+  {
+    "name": "Claude AI",
+    "query": "claude ai"
+  },
+  {
+    "name": "Large language models",
+    "query": "large language models"
+  },
+  {
+    "name": "Neural networks",
+    "query": "neural networks"
+  },
+  {
+    "name": "Machine learning",
+    "query": "machine learning"
+  },
+  {
+    "name": "Transistors",
+    "query": "transistors"
+  },
+  {
+    "name": "Microchips",
+    "query": "microchips"
+  },
+  {
+    "name": "Computers",
+    "query": "computers"
+  },
+  {
+    "name": "Quantum computers",
+    "query": "quantum computers"
+  },
+  {
+    "name": "Internet",
+    "query": "internet"
+  },
+  {
+    "name": "Wi-Fi",
+    "query": "wi-fi"
+  },
+  {
+    "name": "GPS",
+    "query": "gps"
+  },
+  {
+    "name": "Smartphones",
+    "query": "smartphones"
+  },
+  {
+    "name": "Touchscreens",
+    "query": "touchscreens"
+  },
+  {
+    "name": "Cameras",
+    "query": "cameras"
+  },
+  {
+    "name": "Encryption",
+    "query": "encryption"
+  },
+  {
+    "name": "Passwords",
+    "query": "passwords"
+  },
+  {
+    "name": "Algorithms",
+    "query": "algorithms"
+  },
+  {
+    "name": "Binary code",
+    "query": "binary code"
+  },
+  {
+    "name": "Programming",
+    "query": "programming"
+  },
+  {
+    "name": "Python programming",
+    "query": "python programming"
+  },
+  {
+    "name": "JavaScript",
+    "query": "javascript"
+  },
+  {
+    "name": "Git",
+    "query": "git"
+  },
+  {
+    "name": "Linux",
+    "query": "linux"
+  },
+  {
+    "name": "Robots",
+    "query": "robots"
+  },
+  {
+    "name": "Drones",
+    "query": "drones"
+  },
+  {
+    "name": "3D printing",
+    "query": "3d printing"
+  },
+  {
+    "name": "Electric cars",
+    "query": "electric cars"
+  },
+  {
+    "name": "Solar panels",
+    "query": "solar panels"
+  },
+  {
+    "name": "Wind turbines",
+    "query": "wind turbines"
+  },
+  {
+    "name": "Nuclear power",
+    "query": "nuclear power"
+  },
+  {
+    "name": "Jet engines",
+    "query": "jet engines"
+  },
+  {
+    "name": "Airplanes",
+    "query": "airplanes"
+  },
+  {
+    "name": "Helicopters",
+    "query": "helicopters"
+  },
+  {
+    "name": "Submarines",
+    "query": "submarines"
+  },
+  {
+    "name": "Trains",
+    "query": "trains"
+  },
+  {
+    "name": "Bridges",
+    "query": "bridges"
+  },
+  {
+    "name": "Skyscrapers",
+    "query": "skyscrapers"
+  },
+  {
+    "name": "Elevators",
+    "query": "elevators"
+  },
+  {
+    "name": "Tunnels",
+    "query": "tunnels"
+  },
+  {
+    "name": "Dams",
+    "query": "dams"
+  },
+  {
+    "name": "Clocks",
+    "query": "clocks"
+  },
+  {
+    "name": "Refrigerators",
+    "query": "refrigerators"
+  },
+  {
+    "name": "Microwaves",
+    "query": "microwaves"
+  },
+  {
+    "name": "Ancient Egypt",
+    "query": "ancient egypt"
+  },
+  {
+    "name": "Pyramids",
+    "query": "pyramids"
+  },
+  {
+    "name": "Mummies",
+    "query": "mummies"
+  },
+  {
+    "name": "Ancient Rome",
+    "query": "ancient rome"
+  },
+  {
+    "name": "Roman Empire",
+    "query": "roman empire"
+  },
+  {
+    "name": "Colosseum",
+    "query": "colosseum"
+  },
+  {
+    "name": "Ancient Greece",
+    "query": "ancient greece"
+  },
+  {
+    "name": "Vikings",
+    "query": "vikings"
+  },
+  {
+    "name": "Samurai",
+    "query": "samurai"
+  },
+  {
+    "name": "Ninjas",
+    "query": "ninjas"
+  },
+  {
+    "name": "Knights",
+    "query": "knights"
+  },
+  {
+    "name": "Castles",
+    "query": "castles"
+  },
+  {
+    "name": "Medieval times",
+    "query": "medieval times"
+  },
+  {
+    "name": "Black Death",
+    "query": "black death"
+  },
+  {
+    "name": "Silk Road",
+    "query": "silk road"
+  },
+  {
+    "name": "Great Wall of China",
+    "query": "great wall of china"
+  },
+  {
+    "name": "Aztecs",
+    "query": "aztecs"
+  },
+  {
+    "name": "Maya civilization",
+    "query": "maya civilization"
+  },
+  {
+    "name": "Inca Empire",
+    "query": "inca empire"
+  },
+  {
+    "name": "Mongol Empire",
+    "query": "mongol empire"
+  },
+  {
+    "name": "Genghis Khan",
+    "query": "genghis khan"
+  },
+  {
+    "name": "Napoleon",
+    "query": "napoleon"
+  },
+  {
+    "name": "Titanic",
+    "query": "titanic"
+  },
+  {
+    "name": "World War I",
+    "query": "world war i"
+  },
+  {
+    "name": "World War II",
+    "query": "world war ii"
+  },
+  {
+    "name": "D-Day",
+    "query": "d-day"
+  },
+  {
+    "name": "Cold War",
+    "query": "cold war"
+  },
+  {
+    "name": "Moon landing",
+    "query": "moon landing"
+  },
+  {
+    "name": "Printing press",
+    "query": "printing press"
+  },
+  {
+    "name": "Industrial Revolution",
+    "query": "industrial revolution"
+  },
+  {
+    "name": "Stonehenge",
+    "query": "stonehenge"
+  },
+  {
+    "name": "Pompeii",
+    "query": "pompeii"
+  },
+  {
+    "name": "Atlantis",
+    "query": "atlantis"
+  },
+  {
+    "name": "Cleopatra",
+    "query": "cleopatra"
+  },
+  {
+    "name": "Alexander the Great",
+    "query": "alexander the great"
+  },
+  {
+    "name": "Julius Caesar",
+    "query": "julius caesar"
+  },
+  {
+    "name": "Leonardo da Vinci",
+    "query": "leonardo da vinci"
+  },
+  {
+    "name": "Isaac Newton",
+    "query": "isaac newton"
+  },
+  {
+    "name": "Albert Einstein",
+    "query": "albert einstein"
+  },
+  {
+    "name": "Marie Curie",
+    "query": "marie curie"
+  },
+  {
+    "name": "Nikola Tesla",
+    "query": "nikola tesla"
+  },
+  {
+    "name": "Charles Darwin",
+    "query": "charles darwin"
+  },
+  {
+    "name": "Pi",
+    "query": "pi"
+  },
+  {
+    "name": "Prime numbers",
+    "query": "prime numbers"
+  },
+  {
+    "name": "Infinity",
+    "query": "infinity"
+  },
+  {
+    "name": "Zero",
+    "query": "zero"
+  },
+  {
+    "name": "Fibonacci sequence",
+    "query": "fibonacci sequence"
+  },
+  {
+    "name": "Golden ratio",
+    "query": "golden ratio"
+  },
+  {
+    "name": "Fractals",
+    "query": "fractals"
+  },
+  {
+    "name": "Probability",
+    "query": "probability"
+  },
+  {
+    "name": "Statistics",
+    "query": "statistics"
+  },
+  {
+    "name": "Geometry",
+    "query": "geometry"
+  },
+  {
+    "name": "Triangles",
+    "query": "triangles"
+  },
+  {
+    "name": "Circles",
+    "query": "circles"
+  },
+  {
+    "name": "Topology",
+    "query": "topology"
+  },
+  {
+    "name": "Mobius strip",
+    "query": "mobius strip"
+  },
+  {
+    "name": "Paradoxes",
+    "query": "paradoxes"
+  },
+  {
+    "name": "Logic puzzles",
+    "query": "logic puzzles"
+  },
+  {
+    "name": "Game theory",
+    "query": "game theory"
+  },
+  {
+    "name": "Cryptography",
+    "query": "cryptography"
+  },
+  {
+    "name": "Calculus",
+    "query": "calculus"
+  },
+  {
+    "name": "Algebra",
+    "query": "algebra"
+  },
+  {
+    "name": "Psychology",
+    "query": "psychology"
+  },
+  {
+    "name": "Habits",
+    "query": "habits"
+  },
+  {
+    "name": "Motivation",
+    "query": "motivation"
+  },
+  {
+    "name": "Procrastination",
+    "query": "procrastination"
+  },
+  {
+    "name": "Optical illusions",
+    "query": "optical illusions"
+  },
+  {
+    "name": "Cognitive biases",
+    "query": "cognitive biases"
+  },
+  {
+    "name": "Emotions",
+    "query": "emotions"
+  },
+  {
+    "name": "Happiness",
+    "query": "happiness"
+  },
+  {
+    "name": "Stress",
+    "query": "stress"
+  },
+  {
+    "name": "Meditation",
+    "query": "meditation"
+  },
+  {
+    "name": "Body language",
+    "query": "body language"
+  },
+  {
+    "name": "Languages",
+    "query": "languages"
+  },
+  {
+    "name": "Etymology",
+    "query": "etymology"
+  },
+  {
+    "name": "Writing systems",
+    "query": "writing systems"
+  },
+  {
+    "name": "Alphabets",
+    "query": "alphabets"
+  },
+  {
+    "name": "Philosophy",
+    "query": "philosophy"
+  },
+  {
+    "name": "Stoicism",
+    "query": "stoicism"
+  },
+  {
+    "name": "Logic",
+    "query": "logic"
+  },
+  {
+    "name": "Economics",
+    "query": "economics"
+  },
+  {
+    "name": "Inflation",
+    "query": "inflation"
+  },
+  {
+    "name": "Money",
+    "query": "money"
+  },
+  {
+    "name": "Stock market",
+    "query": "stock market"
+  },
+  {
+    "name": "Cryptocurrency",
+    "query": "cryptocurrency"
+  },
+  {
+    "name": "Cooking",
+    "query": "cooking"
+  },
+  {
+    "name": "Baking bread",
+    "query": "baking bread"
+  },
+  {
+    "name": "Fermentation",
+    "query": "fermentation"
+  },
+  {
+    "name": "Cheese",
+    "query": "cheese"
+  },
+  {
+    "name": "Ice cream",
+    "query": "ice cream"
+  },
+  {
+    "name": "Spices",
+    "query": "spices"
+  },
+  {
+    "name": "Knots",
+    "query": "knots"
+  },
+  {
+    "name": "Origami",
+    "query": "origami"
+  },
+  {
+    "name": "Paper",
+    "query": "paper"
+  },
+  {
+    "name": "Pencils",
+    "query": "pencils"
+  },
+  {
+    "name": "Soap",
+    "query": "soap"
+  },
+  {
+    "name": "Coffee brewing",
+    "query": "coffee brewing"
+  },
+  {
+    "name": "Color",
+    "query": "color"
+  },
+  {
+    "name": "Music theory",
+    "query": "music theory"
+  },
+  {
+    "name": "Guitar",
+    "query": "guitar"
+  },
+  {
+    "name": "Piano",
+    "query": "piano"
+  },
+  {
+    "name": "Drums",
+    "query": "drums"
+  },
+  {
+    "name": "Painting",
+    "query": "painting"
+  },
+  {
+    "name": "Architecture",
+    "query": "architecture"
+  },
+  {
+    "name": "Maps",
+    "query": "maps"
+  },
+  {
+    "name": "Flags",
+    "query": "flags"
+  },
+  {
+    "name": "Time zones",
+    "query": "time zones"
+  },
+  {
+    "name": "Calendars",
+    "query": "calendars"
+  },
+  {
+    "name": "Olympics",
+    "query": "olympics"
+  },
+  {
+    "name": "Football",
+    "query": "football"
+  },
+  {
+    "name": "Basketball",
+    "query": "basketball"
+  },
+  {
+    "name": "Chess",
+    "query": "chess"
+  },
+  {
+    "name": "Rubik's cube",
+    "query": "rubik's cube"
+  },
+  {
+    "name": "Juggling",
+    "query": "juggling"
+  },
+  {
+    "name": "Magic tricks",
+    "query": "magic tricks"
+  }
+]

@@ -1,4 +1,4 @@
-// Queries for the feed_item table: the current list of 15 videos plus the reserve (F6).
+// Queries for the feed_item table: the current list of up to 100 videos plus the reserve (F6).
 
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -7,8 +7,8 @@ import { isFeedStatus, type FeedItem, type FeedStatus, type NewFeedItem } from '
 type FeedItemRow = {
   position: number;
   videoId: string;
-  channelId: string;
-  channelTitle: string;
+  itemId: number;
+  itemName: string;
   title: string;
   durationSec: number;
   isReserve: number;
@@ -22,8 +22,8 @@ function toFeedItem(row: FeedItemRow): FeedItem {
   return {
     position: row.position,
     videoId: row.videoId,
-    channelId: row.channelId,
-    channelTitle: row.channelTitle,
+    itemId: row.itemId,
+    itemName: row.itemName,
     title: row.title,
     durationSec: row.durationSec,
     isReserve: row.isReserve === 1,
@@ -49,13 +49,13 @@ export async function replaceFeed(
     for (const [position, { item, isReserve }] of items.entries()) {
       await db.runAsync(
         `INSERT INTO feed_item
-           (position, videoId, channelId, channelTitle, title, durationSec, isReserve, status)
+           (position, videoId, itemId, itemName, title, durationSec, isReserve, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'unseen')`,
         [
           position,
           item.videoId,
-          item.channelId,
-          item.channelTitle,
+          item.itemId,
+          item.itemName,
           item.title,
           item.durationSec,
           isReserve,
@@ -68,7 +68,7 @@ export async function replaceFeed(
 /** The whole list, feed and reserve, in position order. */
 export async function getFeedItems(db: SQLiteDatabase): Promise<FeedItem[]> {
   const rows = await db.getAllAsync<FeedItemRow>(
-    `SELECT position, videoId, channelId, channelTitle, title, durationSec, isReserve, status
+    `SELECT position, videoId, itemId, itemName, title, durationSec, isReserve, status
      FROM feed_item ORDER BY position`,
   );
   return rows.map(toFeedItem);

@@ -21,8 +21,8 @@ afterEach(async () => {
 function video(videoId: string): NewFeedItem {
   return {
     videoId,
-    channelId: 'UCa',
-    channelTitle: 'ערוץ היסטוריה',
+    itemId: 1,
+    itemName: 'חורים שחורים',
     title: `Video ${videoId}`,
     durationSec: 59,
   };

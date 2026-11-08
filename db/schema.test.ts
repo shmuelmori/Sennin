@@ -1,8 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { TOPICS } from '@/lib/topics';
-
 import { initDatabase, readDatabaseSummary, SCHEMA_VERSION } from './schema';
+import { SEED_ITEMS } from './seed';
 import { openTestDatabase } from './testDatabase';
 
 let db: SQLiteDatabase;
@@ -15,59 +14,69 @@ afterEach(async () => {
   await db.closeAsync();
 });
 
+/** A v2 database with one row in each table, as the channel-based app left it. */
+async function makeV2Database(): Promise<void> {
+  await db.execAsync(`
+    CREATE TABLE topic (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, keywords TEXT NOT NULL);
+    CREATE TABLE channel (channelId TEXT PRIMARY KEY NOT NULL, title TEXT NOT NULL,
+      uploadsPlaylistId TEXT NOT NULL, thumbnailUrl TEXT, addedAt INTEGER NOT NULL);
+    CREATE TABLE channel_topic (channelId TEXT NOT NULL, topicId TEXT NOT NULL);
+    CREATE TABLE feed_item (position INTEGER PRIMARY KEY NOT NULL, videoId TEXT NOT NULL UNIQUE,
+      channelId TEXT NOT NULL, channelTitle TEXT NOT NULL, title TEXT NOT NULL,
+      durationSec INTEGER NOT NULL, isReserve INTEGER NOT NULL, status TEXT NOT NULL);
+    CREATE TABLE watched (videoId TEXT PRIMARY KEY NOT NULL, watchedAt INTEGER NOT NULL);
+    CREATE TABLE fetch_log (id INTEGER PRIMARY KEY AUTOINCREMENT, startedAt INTEGER NOT NULL,
+      fetched INTEGER NOT NULL, rejectedByRule TEXT NOT NULL, quotaUsed INTEGER NOT NULL,
+      error TEXT, finishedAt INTEGER);
+    INSERT INTO topic VALUES ('ww2', 'World War II', '[]');
+    INSERT INTO channel VALUES ('UCx', 'Channel', 'UUx', NULL, 1);
+    INSERT INTO channel_topic VALUES ('UCx', 'ww2');
+    INSERT INTO feed_item VALUES (0, 'old', 'UCx', 'Channel', 'Old video', 60, 0, 'unseen');
+    INSERT INTO watched VALUES ('seen', 5);
+    INSERT INTO fetch_log (startedAt, fetched, rejectedByRule, quotaUsed) VALUES (1, 2, '[]', 3);
+    PRAGMA user_version = 2;
+  `);
+}
+
 describe('initDatabase', () => {
-  it('creates the six tables from spec §7 and seeds the topics', async () => {
+  it('creates the five tables from spec §7 and seeds the items', async () => {
     await initDatabase(db);
     expect(await readDatabaseSummary(db)).toEqual({
       schemaVersion: SCHEMA_VERSION,
-      tables: ['channel', 'channel_topic', 'feed_item', 'fetch_log', 'topic', 'watched'],
-      topicCount: 2,
+      tables: ['feed_item', 'fetch_log', 'item', 'quota_day', 'watched'],
+      itemCount: SEED_ITEMS.length,
     });
   });
 
-  it('stores each topic with its keywords as JSON', async () => {
+  it('seeds hundreds of items, each with a name and a query', async () => {
     await initDatabase(db);
-    const rows = await db.getAllAsync<{ id: string; name: string; keywords: string }>(
-      'SELECT id, name, keywords FROM topic',
+    const rows = await db.getAllAsync<{ name: string; query: string; removed: number }>(
+      'SELECT name, query, removed FROM item',
     );
-    expect(
-      rows.map((row) => ({ id: row.id, name: row.name, keywords: JSON.parse(row.keywords) })),
-    ).toEqual(TOPICS.map((topic) => ({ ...topic, keywords: [...topic.keywords] })));
+    expect(rows.length).toBeGreaterThanOrEqual(200);
+    expect(rows.every((row) => row.name !== '' && row.query !== '' && row.removed === 0)).toBe(true);
+    expect(rows.map((row) => row.name)).toContain('Octopus');
   });
 
-  it('can run on every launch without losing data', async () => {
+  it('can run on every launch without losing data or seeding again', async () => {
     await initDatabase(db);
     await db.runAsync('INSERT INTO watched (videoId, watchedAt) VALUES (?, ?)', ['abc', 1]);
+    await db.runAsync('DELETE FROM item');
     await initDatabase(db);
-    const summary = await readDatabaseSummary(db);
-    expect(summary.topicCount).toBe(2);
+    expect((await readDatabaseSummary(db)).itemCount).toBe(0);
     expect(await db.getAllAsync('SELECT videoId FROM watched')).toEqual([{ videoId: 'abc' }]);
   });
 
-  it('brings old topic names and keywords up to date', async () => {
+  it('upgrades a v2 database: drops the channel tables and keeps watched', async () => {
+    await makeV2Database();
     await initDatabase(db);
-    await db.runAsync("UPDATE topic SET name = 'Old', keywords = '[]' WHERE id = 'ww2'");
-    await initDatabase(db);
-    const row = await db.getFirstAsync<{ name: string; keywords: string }>(
-      "SELECT name, keywords FROM topic WHERE id = 'ww2'",
-    );
-    expect(row?.name).toBe('World War II');
-    expect(JSON.parse(row?.keywords ?? '[]')).toContain('ww2');
-  });
-
-  it('adds fetch_log.finishedAt to a v1 database and keeps its rows', async () => {
-    // A v1 database, as the app made it before the column existed.
-    await initDatabase(db);
-    await db.execAsync('ALTER TABLE fetch_log DROP COLUMN finishedAt; PRAGMA user_version = 1');
-    await db.runAsync(
-      `INSERT INTO fetch_log (startedAt, fetched, rejectedByRule, quotaUsed, error)
-       VALUES (100, 50, '[]', 4, NULL)`,
-    );
-    await initDatabase(db);
-    expect((await readDatabaseSummary(db)).schemaVersion).toBe(2);
-    expect(await db.getAllAsync('SELECT startedAt, finishedAt, fetched FROM fetch_log')).toEqual([
-      { startedAt: 100, finishedAt: null, fetched: 50 },
-    ]);
+    const summary = await readDatabaseSummary(db);
+    expect(summary.schemaVersion).toBe(3);
+    expect(summary.tables).toEqual(['feed_item', 'fetch_log', 'item', 'quota_day', 'watched']);
+    expect(summary.itemCount).toBe(SEED_ITEMS.length);
+    expect(await db.getAllAsync('SELECT videoId FROM watched')).toEqual([{ videoId: 'seen' }]);
+    expect(await db.getAllAsync('SELECT videoId FROM feed_item')).toEqual([]);
+    expect(await db.getAllAsync('SELECT id FROM fetch_log')).toEqual([]);
   });
 
   it('refuses a database from a newer app version', async () => {
@@ -75,21 +84,32 @@ describe('initDatabase', () => {
     await expect(initDatabase(db)).rejects.toThrow('newer than this app');
   });
 
-  it('turns on foreign keys', async () => {
-    await initDatabase(db);
-    await expect(
-      db.runAsync('INSERT INTO channel_topic (channelId, topicId) VALUES (?, ?)', ['UCx', 'ww2']),
-    ).rejects.toThrow(/FOREIGN KEY/);
-  });
-
   it('only allows the known feed statuses', async () => {
     await initDatabase(db);
     await expect(
       db.runAsync(
         `INSERT INTO feed_item
-           (position, videoId, channelId, channelTitle, title, durationSec, isReserve, status)
-         VALUES (0, 'a', 'UCx', 'Channel', 'Title', 60, 0, 'done')`,
+           (position, videoId, itemId, itemName, title, durationSec, isReserve, status)
+         VALUES (0, 'a', 1, 'Octopus', 'Title', 60, 0, 'done')`,
       ),
     ).rejects.toThrow(/CHECK/);
+  });
+
+  it('treats item names that differ only in case as the same', async () => {
+    await initDatabase(db);
+    await expect(
+      db.runAsync("INSERT INTO item (name, query, createdAt) VALUES ('OCTOPUS', 'x', 1)"),
+    ).rejects.toThrow(/UNIQUE/);
+  });
+});
+
+describe('SEED_ITEMS', () => {
+  it('has no names that repeat, ignoring case', () => {
+    const names = SEED_ITEMS.map((entry) => entry.name.toLowerCase());
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it('has an English query for every item', () => {
+    expect(SEED_ITEMS.every((entry) => /^[\x20-\x7e]+$/.test(entry.query))).toBe(true);
   });
 });
