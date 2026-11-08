@@ -5,26 +5,22 @@
 import { checkApiKey, type ApiKeyCheck } from '@/lib/apiKey';
 import type { YoutubeError, YoutubeResult, YtErrorBody } from '@/lib/youtubeErrors';
 import { classifyApiError } from '@/lib/youtubeErrors';
+import type { ItemSearch } from '@/lib/searchQuery';
 import {
   buildQuery,
-  channelParams,
   chunk,
   MAX_PER_REQUEST,
-  uploadsParams,
+  searchParams,
   videosParams,
-  type ChannelLookup,
   type Endpoint,
   type QueryParams,
 } from '@/lib/youtubeRequests';
 import {
   toFetchedVideos,
-  toResolvedChannel,
-  toVideoIds,
+  toSearchVideoIds,
   type FetchedVideo,
-  type ResolvedChannel,
-  type YtChannel,
   type YtListResponse,
-  type YtPlaylistItem,
+  type YtSearchResult,
   type YtVideo,
 } from '@/lib/youtubeResponses';
 
@@ -32,9 +28,8 @@ const API_BASE = 'https://www.googleapis.com/youtube/v3';
 const REQUEST_TIMEOUT_MS = 15_000;
 
 /** Units per request, from YouTube's quota table. The parts asked for don't change the cost. */
-const UNIT_COST: Readonly<Record<Endpoint, number>> = {
-  channels: 1,
-  playlistItems: 1,
+export const UNIT_COST: Readonly<Record<Endpoint, number>> = {
+  search: 100,
   videos: 1,
 };
 
@@ -45,10 +40,8 @@ export function readApiKey(): ApiKeyCheck {
 }
 
 export type YoutubeClient = {
-  /** channels.list. Fails with notFound if no channel has that handle or ID. */
-  resolveChannel(lookup: ChannelLookup): Promise<YoutubeResult<ResolvedChannel>>;
-  /** playlistItems.list: the IDs of the latest 50 uploads (spec §5 step 1). */
-  listUploads(uploadsPlaylistId: string): Promise<YoutubeResult<string[]>>;
+  /** search.list for one item (spec §5 step 2): up to 25 video IDs. Costs 100 units. */
+  searchShorts(search: ItemSearch): Promise<YoutubeResult<string[]>>;
   /**
    * videos.list in batches of 50, sent in parallel. Private and deleted videos
    * are missing from the result, because YouTube leaves them out.
@@ -109,26 +102,9 @@ export function createYoutubeClient(): YoutubeResult<YoutubeClient> {
   return {
     ok: true,
     value: {
-      async resolveChannel(lookup) {
-        const result = await request<YtListResponse<YtChannel>>('channels', channelParams(lookup));
-        if (!result.ok) {
-          return result;
-        }
-        const first = result.value.items?.[0];
-        const channel = first === undefined ? null : toResolvedChannel(first);
-        if (channel === null) {
-          const name = lookup.kind === 'handle' ? `@${lookup.handle}` : lookup.channelId;
-          return failure({ kind: 'notFound', status: null, message: `no channel ${name}` });
-        }
-        return { ok: true, value: channel };
-      },
-
-      async listUploads(uploadsPlaylistId) {
-        const result = await request<YtListResponse<YtPlaylistItem>>(
-          'playlistItems',
-          uploadsParams(uploadsPlaylistId),
-        );
-        return result.ok ? { ok: true, value: toVideoIds(result.value) } : result;
+      async searchShorts(search) {
+        const result = await request<YtListResponse<YtSearchResult>>('search', searchParams(search));
+        return result.ok ? { ok: true, value: toSearchVideoIds(result.value) } : result;
       },
 
       async getVideos(videoIds) {

@@ -2,69 +2,27 @@ import {
   toCount,
   toFetchedVideo,
   toFetchedVideos,
-  toResolvedChannel,
-  toVideoIds,
-  type YtChannel,
+  toSearchVideoIds,
   type YtVideo,
 } from './youtubeResponses';
 
-const CHANNEL: YtChannel = {
-  id: 'UCYO_jab_esuFRV4b17AJtAw',
-  snippet: {
-    title: '3Blue1Brown',
-    thumbnails: {
-      default: { url: 'https://yt3.example/88.jpg' },
-      medium: { url: 'https://yt3.example/240.jpg' },
-      high: { url: 'https://yt3.example/800.jpg' },
-    },
-  },
-  contentDetails: { relatedPlaylists: { uploads: 'UUYO_jab_esuFRV4b17AJtAw' } },
-};
-
-describe('toResolvedChannel', () => {
-  it('reads the ID, title, uploads playlist and the 240 px thumbnail', () => {
-    expect(toResolvedChannel(CHANNEL)).toEqual({
-      channelId: 'UCYO_jab_esuFRV4b17AJtAw',
-      title: '3Blue1Brown',
-      uploadsPlaylistId: 'UUYO_jab_esuFRV4b17AJtAw',
-      thumbnailUrl: 'https://yt3.example/240.jpg',
-    });
-  });
-
-  it('falls back to another thumbnail, or none', () => {
-    const onlyDefault = { ...CHANNEL, snippet: { title: 'x', thumbnails: { default: { url: 'd' } } } };
-    expect(toResolvedChannel(onlyDefault)?.thumbnailUrl).toBe('d');
-    expect(toResolvedChannel({ ...CHANNEL, snippet: { title: 'x' } })?.thumbnailUrl).toBeNull();
-  });
-
-  it('uses the channel ID when the title is missing', () => {
-    expect(toResolvedChannel({ ...CHANNEL, snippet: undefined })?.title).toBe(CHANNEL.id);
-  });
-
-  it('returns null without an ID or an uploads playlist', () => {
-    expect(toResolvedChannel({ ...CHANNEL, id: undefined })).toBeNull();
-    expect(toResolvedChannel({ ...CHANNEL, contentDetails: { relatedPlaylists: {} } })).toBeNull();
-    expect(toResolvedChannel({})).toBeNull();
-  });
-});
-
-describe('toVideoIds', () => {
-  it('reads the IDs in order and drops repeats and items without one', () => {
+describe('toSearchVideoIds', () => {
+  it('reads the IDs in order and drops repeats and results without one', () => {
     const response = {
       items: [
-        { contentDetails: { videoId: 'a' } },
-        { contentDetails: {} },
-        { contentDetails: { videoId: 'b' } },
+        { id: { kind: 'youtube#video', videoId: 'a' } },
+        { id: { kind: 'youtube#channel' } },
+        { id: { videoId: 'b' } },
         {},
-        { contentDetails: { videoId: 'a' } },
-        { contentDetails: { videoId: '' } },
+        { id: { videoId: 'a' } },
+        { id: { videoId: '' } },
       ],
     };
-    expect(toVideoIds(response)).toEqual(['a', 'b']);
+    expect(toSearchVideoIds(response)).toEqual(['a', 'b']);
   });
 
   it('returns no IDs when items is missing', () => {
-    expect(toVideoIds({})).toEqual([]);
+    expect(toSearchVideoIds({})).toEqual([]);
   });
 });
 
@@ -88,6 +46,7 @@ const VIDEO: YtVideo = {
     channelTitle: '3Blue1Brown',
     title: 'A short proof',
     description: 'Geometry',
+    tags: ['math', 'proof'],
     publishedAt: '2026-11-01T12:00:00Z',
     liveBroadcastContent: 'none',
   },
@@ -105,6 +64,7 @@ describe('toFetchedVideo', () => {
       channelTitle: '3Blue1Brown',
       title: 'A short proof',
       description: 'Geometry',
+      tags: ['math', 'proof'],
       publishedAtMs: Date.UTC(2026, 10, 1, 12, 0, 0),
       durationSec: 65,
       embedWidth: 608,
@@ -132,6 +92,7 @@ describe('toFetchedVideo', () => {
       channelTitle: '',
       title: '',
       description: '',
+      tags: [],
       publishedAtMs: 0,
       durationSec: null,
       embedWidth: null,

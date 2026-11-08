@@ -5,27 +5,43 @@ import {
   fetchSummaryLines,
   formatError,
   formatSeconds,
+  quotaLowMessage,
   rejectionLines,
   replacesList,
   toFetchLog,
 } from './fetchMessages';
-import type { FetchOutcome, SkippedChannel } from './fetchPipeline';
-import type { NewFeedItem } from './records';
+import type { FetchOutcome, SkippedItem } from './fetchPipeline';
+import type { Item, ItemReport, NewFeedItem } from './records';
 import type { YoutubeError } from './youtubeErrors';
 
 const QUOTA: YoutubeError = { kind: 'quotaExceeded', status: 403, message: 'quota used up' };
-const GONE: YoutubeError = { kind: 'notFound', status: 404, message: 'playlist not found' };
 const OFFLINE: YoutubeError = { kind: 'network', status: null, message: 'timed out after 15 s' };
 
-function items(count: number): NewFeedItem[] {
+function videos(count: number): NewFeedItem[] {
   return Array.from({ length: count }, (_, i) => ({
     videoId: `v${i}`,
-    channelId: 'a',
-    channelTitle: 'A',
+    itemId: 1,
+    itemName: 'Octopus',
     title: `Video ${i}`,
     durationSec: 30,
   }));
 }
+
+const DRAWN: Item[] = [1, 2].map((id) => ({
+  id,
+  name: id === 1 ? 'Octopus' : 'Iron',
+  query: id === 1 ? 'octopus' : 'iron',
+  removed: false,
+  removedAtMs: null,
+  lastPickedAtMs: null,
+  pickCount: 0,
+  createdAtMs: 0,
+}));
+
+const REPORTS: ItemReport[] = [
+  { itemId: 1, name: 'Octopus', results: 25, passed: 9, selected: 5, error: null },
+  { itemId: 2, name: 'Iron', results: 0, passed: 0, selected: 0, error: 'timed out after 15 s' },
+];
 
 const REJECTED: RejectedVideo[] = [
   { videoId: 'r1', rule: 'length', detail: '600 s' },
@@ -34,25 +50,29 @@ const REJECTED: RejectedVideo[] = [
   { videoId: 'r4', rule: 'minViews', detail: '12 views' },
 ];
 
-const SKIPPED: SkippedChannel[] = [{ channelId: 'UCgone', title: 'Gone', error: GONE }];
+const SKIPPED: SkippedItem[] = [{ itemId: 2, name: 'Iron', error: OFFLINE }];
 
-function done(feed: number, reserve: number, skipped: SkippedChannel[] = []): FetchOutcome {
+function done(feed: number, reserve: number, skipped: SkippedItem[] = []): FetchOutcome {
   return {
     ok: true,
-    feed: items(feed),
-    reserve: items(reserve),
+    feed: videos(feed),
+    reserve: videos(reserve),
     rejected: REJECTED,
+    drawn: DRAWN,
+    reports: REPORTS,
     skipped,
-    counts: { channelsRead: 3, uploads: 150, toCheck: 120, fetched: 118 },
+    counts: { drawn: 2, results: 25, toCheck: 20, fetched: 18, passed: 14 },
   };
 }
 
-function failed(error: YoutubeError, skipped: SkippedChannel[] = []): FetchOutcome {
+function failed(error: YoutubeError, skipped: SkippedItem[] = []): FetchOutcome {
   return {
     ok: false,
     error,
+    drawn: DRAWN,
+    reports: REPORTS,
     skipped,
-    counts: { channelsRead: 0, uploads: 0, toCheck: 0, fetched: 0 },
+    counts: { drawn: 2, results: 0, toCheck: 0, fetched: 0, passed: 0 },
   };
 }
 
@@ -76,35 +96,33 @@ describe('fetchLogError', () => {
     expect(fetchLogError(done(15, 10))).toBeNull();
   });
 
-  it('names the failure, the skipped channels and the extra error', () => {
+  it('names the failure, the skipped items and the extra error', () => {
     expect(fetchLogError(failed(QUOTA, SKIPPED), 'saving failed')).toBe(
       'failed: quotaExceeded (HTTP 403): quota used up; ' +
-        'skipped Gone (UCgone): notFound (HTTP 404): playlist not found; saving failed',
+        'skipped Iron (item 2): network (HTTP -): timed out after 15 s; saving failed',
     );
   });
 });
 
 describe('toFetchLog', () => {
-  it('keeps the rejections, the fetched count and the units', () => {
-    expect(toFetchLog(done(15, 10, SKIPPED), 1000, 13_400, 34)).toEqual({
+  it('keeps the item reports, the counts, the rejections and the units', () => {
+    expect(toFetchLog(done(7, 2), 1000, 4200, 2010)).toEqual({
       startedAtMs: 1000,
-      finishedAtMs: 13_400,
-      fetched: 118,
+      durationMs: 4200,
+      itemsPicked: REPORTS,
+      fetched: 18,
+      passed: 14,
       rejected: REJECTED,
-      quotaUsed: 34,
-      error: 'skipped Gone (UCgone): notFound (HTTP 404): playlist not found',
+      quotaUsed: 2010,
+      error: null,
     });
   });
 
   it('logs a failed fetch with no rejections', () => {
-    expect(toFetchLog(failed(QUOTA), 1000, 2000, 5)).toEqual({
-      startedAtMs: 1000,
-      finishedAtMs: 2000,
-      fetched: 0,
-      rejected: [],
-      quotaUsed: 5,
-      error: 'failed: quotaExceeded (HTTP 403): quota used up',
-    });
+    const log = toFetchLog(failed(QUOTA), 1000, 300, 500);
+    expect(log.rejected).toEqual([]);
+    expect(log.itemsPicked).toEqual(REPORTS);
+    expect(log.error).toBe('failed: quotaExceeded (HTTP 403): quota used up');
   });
 });
 
@@ -112,33 +130,42 @@ describe('formatSeconds', () => {
   it('shows tenths of a second', () => {
     expect(formatSeconds(12_345)).toBe('12.3 s');
     expect(formatSeconds(0)).toBe('0.0 s');
-    expect(formatSeconds(65_000)).toBe('65.0 s');
   });
 
   it('shows a negative duration (clock moved back) as zero', () => {
-    expect(formatSeconds(-500)).toBe('0.0 s');
+    expect(formatSeconds(-50)).toBe('0.0 s');
+  });
+});
+
+describe('quotaLowMessage', () => {
+  it('says how many units are left and how many a fetch needs', () => {
+    expect(quotaLowMessage(8500)).toEqual({
+      title: 'Not enough quota today',
+      message:
+        '1,500 API units are left today, and a fetch needs 2,100. ' +
+        'The quota resets at midnight Pacific time.',
+    });
   });
 });
 
 describe('describeFetchOutcome', () => {
   it('reports a new list', () => {
-    expect(describeFetchOutcome(done(15, 10))).toEqual({
+    expect(describeFetchOutcome(done(7, 2))).toEqual({
       title: 'New list ready',
-      message: '15 videos, plus 10 in reserve.',
+      message: '7 videos from 2 topics, plus 2 in reserve.',
     });
-    expect(describeFetchOutcome(done(1, 0)).message).toBe('1 video, no reserve.');
   });
 
-  it('names skipped channels', () => {
-    expect(describeFetchOutcome(done(15, 2, SKIPPED)).message).toBe(
-      "15 videos, plus 2 in reserve.\n\nSkipped 1 channel YouTube couldn't read: Gone.",
+  it('names skipped items', () => {
+    expect(describeFetchOutcome(done(1, 0, SKIPPED)).message).toBe(
+      "1 video from 2 topics, no reserve.\n\nSkipped 1 topic YouTube couldn't search: Iron.",
     );
   });
 
   it('says the list stays when nothing new passed', () => {
     expect(describeFetchOutcome(done(0, 0))).toEqual({
       title: 'No new videos found',
-      message: 'Your channels have no new Shorts that pass the filters. Your current list stays.',
+      message: 'The drawn topics have no new Shorts that pass the filters. Your current list stays.',
     });
   });
 
@@ -146,33 +173,33 @@ describe('describeFetchOutcome', () => {
     expect(describeFetchOutcome(failed(QUOTA))).toEqual({
       title: "Couldn't refresh",
       message:
-        "Today's YouTube API quota is used up. It resets at midnight Pacific time. Your current list stays.",
+        "Today's YouTube API quota is used up. It resets at midnight Pacific time. " +
+        'Your current list stays.',
     });
-    expect(describeFetchOutcome(failed(GONE)).message).toBe(
-      "YouTube couldn't find your channels' uploads. Your current list stays.",
-    );
   });
 });
 
 describe('fetchSummaryLines', () => {
-  it('gives the counts, the units and the time', () => {
-    expect(fetchSummaryLines(done(15, 10), 3, 6, 4321)).toEqual([
-      '3 of 3 channels read, 150 uploads, 120 to check, 118 fetched (2 private or deleted)',
-      '114 passed, 4 rejected',
-      'new list: 15 + 10 reserve, 6 units, 4.3 s',
+  it('gives the counts, each item, the units and the time', () => {
+    expect(fetchSummaryLines(done(7, 2), 2010, 8400)).toEqual([
+      '2 topics drawn, 25 results, 20 to check, 18 fetched (2 private or deleted)',
+      '14 passed, 4 rejected',
+      '  Octopus: 25 results, 9 passed, 5 selected',
+      '  Iron: 0 results, 0 passed, 0 selected',
+      'new list: 7 + 2 reserve, 2010 units, 8.4 s',
     ]);
   });
 
   it('says when the list is kept', () => {
-    expect(fetchSummaryLines(done(0, 0), 3, 4, 1000).at(-1)).toBe(
-      'no new videos, list kept, 4 units, 1.0 s',
+    expect(fetchSummaryLines(done(0, 0), 2010, 1000).at(-1)).toBe(
+      'no new videos, list kept, 2010 units, 1.0 s',
     );
   });
 
-  it('lists skipped channels and the failure', () => {
-    expect(fetchSummaryLines(failed(QUOTA, SKIPPED), 2, 1, 500)).toEqual([
-      'skipped Gone (UCgone): notFound (HTTP 404): playlist not found',
-      'failed: quotaExceeded (HTTP 403): quota used up, 1 unit, 0.5 s',
+  it('lists skipped items and the failure', () => {
+    expect(fetchSummaryLines(failed(QUOTA, SKIPPED), 1, 200)).toEqual([
+      'skipped Iron (item 2): network (HTTP -): timed out after 15 s',
+      'failed: quotaExceeded (HTTP 403): quota used up, 1 unit, 0.2 s',
     ]);
   });
 });
@@ -185,8 +212,8 @@ describe('rejectionLines', () => {
       'vertical: 0',
       'embeddable: 0',
       'blockedWord: 0',
-      'keyword: 0',
       'minViews: 1, e.g. r4 (12 views)',
+      'queryMatch: 0',
     ]);
   });
 });

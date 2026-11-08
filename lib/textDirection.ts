@@ -1,4 +1,4 @@
-// Which way a piece of text reads, for titles and channel names that can be
+// Which way a piece of text reads, for titles and item names that can be
 // Hebrew or English (spec §11, step 9.3).
 //
 // On Android, React Native aligns text by the app's layout direction, not by

@@ -4,7 +4,6 @@ import {
   buildStatusReport,
   describeApiKeyStatus,
   formatAge,
-  formatFetchDuration,
   formatFetchTime,
   RULE_LABELS,
 } from './statusReport';
@@ -20,10 +19,15 @@ function log(overrides: Partial<FetchLog> = {}): FetchLog {
   return {
     id: 1,
     startedAtMs: new Date(2026, 10, 6, 14, 32).getTime(),
-    finishedAtMs: new Date(2026, 10, 6, 14, 32, 12, 400).getTime(),
+    durationMs: 12_400,
+    itemsPicked: [
+      { itemId: 1, name: 'Octopus', results: 25, passed: 9, selected: 5, error: null },
+      { itemId: 2, name: 'Iron', results: 3, passed: 0, selected: 0, error: null },
+    ],
     fetched: 100,
+    passed: 97,
     rejected: [],
-    quotaUsed: 4,
+    quotaUsed: 2010,
     error: null,
     ...overrides,
   };
@@ -87,37 +91,45 @@ describe('formatFetchTime', () => {
   });
 });
 
-describe('formatFetchDuration', () => {
-  it('shows the time from start to end in seconds', () => {
-    expect(formatFetchDuration({ startedAtMs: 1000, finishedAtMs: 9_550 })).toBe('8.6 s');
-  });
-
-  it('shows a dash for a fetch logged before the end time was saved', () => {
-    expect(formatFetchDuration({ startedAtMs: 1000, finishedAtMs: null })).toBe('—');
-  });
-});
-
 describe('buildStatusReport', () => {
   it('reports no fetch when there is no log', () => {
-    expect(buildStatusReport(null, NOW)).toEqual({ hasFetch: false });
+    expect(buildStatusReport(null, NOW, 0)).toEqual({ hasFetch: false });
   });
 
   it('shows the time, counts and units of the last fetch', () => {
-    const report = buildStatusReport(log({ rejected: REJECTED }), NOW);
+    const report = buildStatusReport(log({ rejected: REJECTED }), NOW, 4020);
     if (!report.hasFetch) throw new Error('expected a fetch');
     expect(report.summary).toEqual([
       { label: 'Time', value: 'Today 14:32 (5 min ago)' },
       { label: 'Duration', value: '12.4 s' },
+      { label: 'Topics drawn', value: '2' },
       { label: 'Videos fetched', value: '100' },
       { label: 'Passed the filters', value: '97' },
+      { label: 'In the list', value: '5' },
       { label: 'Rejected', value: '3' },
-      { label: 'API units used', value: '4' },
+      { label: 'API units used', value: '2,010' },
+      { label: 'API units left today', value: '5,980' },
     ]);
     expect(report.error).toBeNull();
   });
 
+  it('leaves out the units left when today’s count is unknown', () => {
+    const report = buildStatusReport(log(), NOW, null);
+    if (!report.hasFetch) throw new Error('expected a fetch');
+    expect(report.summary.map((row) => row.label)).not.toContain('API units left today');
+  });
+
+  it('lists each drawn item and flags one that gave no video', () => {
+    const report = buildStatusReport(log(), NOW, 0);
+    if (!report.hasFetch) throw new Error('expected a fetch');
+    expect(report.items).toEqual([
+      { itemId: 1, label: 'Octopus', value: '25 / 9 / 5', flagged: false },
+      { itemId: 2, label: 'Iron', value: '3 / 0 / 0', flagged: true },
+    ]);
+  });
+
   it('lists every rule in the §5 order, with zeros', () => {
-    const report = buildStatusReport(log({ rejected: REJECTED }), NOW);
+    const report = buildStatusReport(log({ rejected: REJECTED }), NOW, 0);
     if (!report.hasFetch) throw new Error('expected a fetch');
     expect(report.rules).toEqual([
       { rule: 'live', label: 'Live stream', count: 0 },
@@ -125,20 +137,14 @@ describe('buildStatusReport', () => {
       { rule: 'vertical', label: 'Not vertical', count: 0 },
       { rule: 'embeddable', label: "Can't be embedded", count: 0 },
       { rule: 'blockedWord', label: 'Blocked word', count: 0 },
-      { rule: 'keyword', label: 'No topic keyword', count: 0 },
       { rule: 'minViews', label: 'Under 1,000 views', count: 1 },
+      { rule: 'queryMatch', label: 'No word from the topic', count: 0 },
     ]);
-  });
-
-  it('shows a dash for the duration of an old log', () => {
-    const report = buildStatusReport(log({ finishedAtMs: null }), NOW);
-    if (!report.hasFetch) throw new Error('expected a fetch');
-    expect(report.summary.find((row) => row.label === 'Duration')?.value).toBe('—');
   });
 
   it('passes the error through for a failed fetch', () => {
     const error = 'failed: quotaExceeded (HTTP 403): quota used up';
-    const report = buildStatusReport(log({ fetched: 0, quotaUsed: 1, error }), NOW);
+    const report = buildStatusReport(log({ fetched: 0, passed: 0, quotaUsed: 1, error }), NOW, 0);
     if (!report.hasFetch) throw new Error('expected a fetch');
     expect(report.error).toBe(error);
     expect(report.summary.find((row) => row.label === 'Passed the filters')?.value).toBe('0');

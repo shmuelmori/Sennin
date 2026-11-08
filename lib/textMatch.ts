@@ -1,4 +1,4 @@
-// Whole-word matching of keywords and blocked words (spec §5) in titles and
+// Whole-word matching of query words and blocked words (spec §5) in titles and
 // descriptions, in English or Hebrew.
 //
 // JavaScript's \b only knows Latin letters, so word boundaries are checked by
@@ -20,7 +20,7 @@ export function normalizeText(text: string): string {
 
 /**
  * The first of `terms` that appears in `text` as a whole word, or null.
- * Terms must already be normalized (see lib/topics.ts).
+ * Terms must already be normalized (see lib/blockedWords.ts and queryTerms in lib/searchQuery.ts).
  */
 export function findTerm(text: string, terms: readonly string[]): string | null {
   const normalized = normalizeText(text);

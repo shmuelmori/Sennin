@@ -1,11 +1,12 @@
 // The fetch report the Status and Refresh screens show (spec §4, F11): the
-// last fetch's time and duration, how many videos it fetched, how many each
-// rule rejected, the API units it used and any error, plus (Status only)
-// whether the API key is loaded.
+// last fetch's time and duration, the items it drew with what each gave, how
+// many videos each rule rejected, the API units it used and those left
+// today, and any error, plus (Status only) whether the API key is loaded.
 
 import type { ApiKeyCheck } from './apiKey';
 import { formatSeconds } from './fetchMessages';
 import { countRejectionsByRule, RULE_NAMES, type RuleName } from './filterRules';
+import { unitsLeft } from './quota';
 import type { FetchLog } from './records';
 
 /** The §5 rules as the Status screen names them. */
@@ -15,11 +16,14 @@ export const RULE_LABELS: Record<RuleName, string> = {
   vertical: 'Not vertical',
   embeddable: "Can't be embedded",
   blockedWord: 'Blocked word',
-  keyword: 'No topic keyword',
   minViews: 'Under 1,000 views',
+  queryMatch: 'No word from the topic',
 };
 
 export type StatusRow = { label: string; value: string };
+
+/** One drawn item: "results / passed / selected", flagged when it gave no video. */
+export type ItemRow = StatusRow & { itemId: number; flagged: boolean };
 
 export type RuleCount = { rule: RuleName; label: string; count: number };
 
@@ -33,11 +37,13 @@ export type StatusReport =
   | { hasFetch: false }
   | {
       hasFetch: true;
-      /** Time, duration, videos fetched, passed, rejected and units used. */
+      /** Time, duration, topics drawn, videos fetched, passed, selected, rejected and units. */
       summary: StatusRow[];
+      /** Each drawn item in draw order. */
+      items: ItemRow[];
       /** Every rule in the §5 order, including those that rejected nothing. */
       rules: RuleCount[];
-      /** fetch_log.error: why the fetch failed or which channels it skipped. */
+      /** fetch_log.error: why the fetch failed or which items it skipped. */
       error: string | null;
     };
 
@@ -79,28 +85,46 @@ export function formatFetchTime(startedAtMs: number, nowMs: number): string {
   return `${day} ${clock} (${formatAge(Math.max(0, nowMs - startedAtMs))})`;
 }
 
-/** How long the fetch took, or "—" for a fetch logged before schema v2 saved the end. */
-export function formatFetchDuration(log: Pick<FetchLog, 'startedAtMs' | 'finishedAtMs'>): string {
-  return log.finishedAtMs === null ? '—' : formatSeconds(log.finishedAtMs - log.startedAtMs);
+function count(value: number): string {
+  return value.toLocaleString('en-US');
 }
 
-/** The report for the latest fetch_log row, or "no fetch yet" if there is none. */
-export function buildStatusReport(log: FetchLog | null, nowMs: number): StatusReport {
+/**
+ * The report for the latest fetch_log row, or "no fetch yet" if there is none.
+ * `unitsUsedToday` is today's quota_day count, or null if it couldn't be read.
+ */
+export function buildStatusReport(
+  log: FetchLog | null,
+  nowMs: number,
+  unitsUsedToday: number | null,
+): StatusReport {
   if (log === null) {
     return { hasFetch: false };
   }
   const counts = countRejectionsByRule(log.rejected);
-  const rejected = log.rejected.length;
+  const selected = log.itemsPicked.reduce((sum, item) => sum + item.selected, 0);
+  const summary: StatusRow[] = [
+    { label: 'Time', value: formatFetchTime(log.startedAtMs, nowMs) },
+    { label: 'Duration', value: formatSeconds(log.durationMs) },
+    { label: 'Topics drawn', value: count(log.itemsPicked.length) },
+    { label: 'Videos fetched', value: count(log.fetched) },
+    { label: 'Passed the filters', value: count(log.passed) },
+    { label: 'In the list', value: count(selected) },
+    { label: 'Rejected', value: count(log.rejected.length) },
+    { label: 'API units used', value: count(log.quotaUsed) },
+  ];
+  if (unitsUsedToday !== null) {
+    summary.push({ label: 'API units left today', value: count(unitsLeft(unitsUsedToday)) });
+  }
   return {
     hasFetch: true,
-    summary: [
-      { label: 'Time', value: formatFetchTime(log.startedAtMs, nowMs) },
-      { label: 'Duration', value: formatFetchDuration(log) },
-      { label: 'Videos fetched', value: String(log.fetched) },
-      { label: 'Passed the filters', value: String(Math.max(0, log.fetched - rejected)) },
-      { label: 'Rejected', value: String(rejected) },
-      { label: 'API units used', value: String(log.quotaUsed) },
-    ],
+    summary,
+    items: log.itemsPicked.map((item) => ({
+      itemId: item.itemId,
+      label: item.name,
+      value: `${item.results} / ${item.passed} / ${item.selected}`,
+      flagged: item.selected === 0,
+    })),
     rules: RULE_NAMES.map((rule) => ({ rule, label: RULE_LABELS[rule], count: counts[rule] })),
     error: log.error,
   };

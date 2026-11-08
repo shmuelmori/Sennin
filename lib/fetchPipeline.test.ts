@@ -1,39 +1,44 @@
+import { adjacentRepeats } from './feedShuffle';
 import {
   failedBeforeStart,
   type FetchApi,
   type FetchInput,
-  filterContext,
   runFetch,
+  SEARCH_BATCH,
   stopsFetch,
   toNewFeedItem,
 } from './fetchPipeline';
-import type { Channel } from './records';
-import type { TopicId } from './topics';
+import type { Item } from './records';
+import type { ItemSearch } from './searchQuery';
 import type { YoutubeError, YoutubeErrorKind, YoutubeResult } from './youtubeErrors';
 import type { FetchedVideo } from './youtubeResponses';
 
-const NOW = Date.UTC(2026, 10, 6, 12, 0, 0);
+const NOW = Date.UTC(2026, 10, 8, 20, 0, 0);
 const DAY = 24 * 60 * 60 * 1000;
 
-function channel(channelId: string, topicIds: TopicId[] = ['ww2']): Channel {
+function item(id: number, name: string, overrides: Partial<Item> = {}): Item {
   return {
-    channelId,
-    title: `Title ${channelId}`,
-    uploadsPlaylistId: `UU${channelId}`,
-    thumbnailUrl: null,
-    addedAtMs: 0,
-    topicIds,
+    id,
+    name,
+    query: name.toLowerCase(),
+    removed: false,
+    removedAtMs: null,
+    lastPickedAtMs: null,
+    pickCount: 0,
+    createdAtMs: 0,
+    ...overrides,
   };
 }
 
-/** A Short that passes every rule, from channel "a". */
-function short(videoId: string, overrides: Partial<FetchedVideo> = {}): FetchedVideo {
+/** A Short that passes every rule for a query containing `word`. */
+function short(videoId: string, word: string, overrides: Partial<FetchedVideo> = {}): FetchedVideo {
   return {
     videoId,
-    channelId: 'a',
-    channelTitle: 'Channel A',
-    title: `Short ${videoId}`,
+    channelId: 'chan',
+    channelTitle: 'Channel',
+    title: `All about the ${word}`,
     description: '',
+    tags: [],
     publishedAtMs: NOW - 10 * DAY,
     durationSec: 45,
     embedWidth: 608,
@@ -50,203 +55,197 @@ function error(kind: YoutubeErrorKind): YoutubeError {
   return { kind, status: kind === 'network' ? null : 403, message: kind };
 }
 
-function input(overrides: Partial<FetchInput> = {}): FetchInput {
+function input(items: Item[], overrides: Partial<FetchInput> = {}): FetchInput {
   return {
-    channels: [channel('a')],
+    items,
     watchedIds: new Set(),
     listedIds: new Set(),
-    lastFetchMs: null,
     nowMs: NOW,
+    random: () => 0.5,
     ...overrides,
   };
 }
 
 /**
- * A fake API. `uploads` maps a playlist ID to its video IDs or an error;
- * getVideos returns the known videos among the requested IDs.
+ * A fake API. `searches` maps the first word of q (the item's query) to its
+ * video IDs or an error; getVideos returns the known videos among the IDs.
  */
 function fakeApi(
-  uploads: Record<string, string[] | YoutubeError>,
+  searches: Record<string, string[] | YoutubeError>,
   videos: readonly FetchedVideo[],
   videosError: YoutubeError | null = null,
 ) {
+  const sent: ItemSearch[] = [];
   const requested: string[][] = [];
   const api: FetchApi = {
-    async listUploads(playlistId) {
-      const value = uploads[playlistId] ?? [];
-      return Array.isArray(value) ? { ok: true, value } : { ok: false, error: value };
+    async searchShorts(search): Promise<YoutubeResult<string[]>> {
+      sent.push(search);
+      const answer = searches[search.q.split(' ')[0]] ?? [];
+      return Array.isArray(answer) ? { ok: true, value: answer } : { ok: false, error: answer };
     },
     async getVideos(ids): Promise<YoutubeResult<FetchedVideo[]>> {
       requested.push([...ids]);
-      if (videosError !== null) {
-        return { ok: false, error: videosError };
-      }
+      if (videosError) return { ok: false, error: videosError };
       return { ok: true, value: videos.filter((video) => ids.includes(video.videoId)) };
     },
   };
-  return { api, requested };
+  return { api, sent, requested };
 }
 
-describe('stopsFetch', () => {
-  it('stops on key and quota errors', () => {
-    for (const kind of ['noKey', 'badKey', 'keyRestricted', 'quotaExceeded'] as const) {
-      expect(stopsFetch(error(kind))).toBe(true);
-    }
-  });
-
-  it('skips only the channel on other errors', () => {
-    for (const kind of ['notFound', 'network', 'other'] as const) {
-      expect(stopsFetch(error(kind))).toBe(false);
-    }
-  });
-});
-
 describe('runFetch', () => {
-  it('builds the list from the passing Shorts and logs the rejected ones', async () => {
-    const { api } = fakeApi({ UUa: ['s1', 'long', 's2'] }, [
-      short('s1', { viewCount: 500_000 }),
-      short('long', { durationSec: 600 }),
-      short('s2', { viewCount: 2_000 }),
+  it('searches each active item once, with its suffix and order', async () => {
+    const { api, sent } = fakeApi({}, []);
+    const items = [item(1, 'Octopus', { pickCount: 1 }), item(2, 'Iron'), item(3, 'Gone', { removed: true })];
+    const outcome = await runFetch(input(items), api);
+    expect(sent).toEqual([
+      { q: 'octopus facts', order: 'viewCount' },
+      { q: 'iron explained', order: 'relevance' },
     ]);
-    const outcome = await runFetch(input(), api);
-    expect(outcome).toEqual({
-      ok: true,
-      feed: [
-        { videoId: 's1', channelId: 'a', channelTitle: 'Channel A', title: 'Short s1', durationSec: 45 },
-        { videoId: 's2', channelId: 'a', channelTitle: 'Channel A', title: 'Short s2', durationSec: 45 },
-      ],
-      reserve: [],
-      rejected: [{ videoId: 'long', rule: 'length', detail: '600 s' }],
-      skipped: [],
-      counts: { channelsRead: 1, uploads: 3, toCheck: 3, fetched: 3 },
-    });
+    expect(outcome.drawn.map((i) => i.id)).toEqual([1, 2]);
   });
 
-  it('drops watched, listed and repeated videos before videos.list', async () => {
+  it('draws at most 20 items out of many', async () => {
+    const items = Array.from({ length: 50 }, (_, n) => item(n + 1, `Thing${n}`));
+    const { api, sent } = fakeApi({}, []);
+    const outcome = await runFetch(input(items, { random: Math.random }), api);
+    expect(sent).toHaveLength(20);
+    expect(outcome.counts.drawn).toBe(20);
+  });
+
+  it('takes the 5 most viewed per item, puts the rest in reserve and reports per item', async () => {
+    const octo = Array.from({ length: 7 }, (_, n) => short(`o${n}`, 'octopus', { viewCount: 1000 + n }));
+    const iron = [short('i0', 'iron'), short('i1', 'iron')];
+    const { api } = fakeApi(
+      { octopus: octo.map((v) => v.videoId), iron: ['i0', 'i1'] },
+      [...octo, ...iron],
+    );
+    const outcome = await runFetch(input([item(1, 'Octopus'), item(2, 'Iron')]), api);
+    if (!outcome.ok) throw new Error('expected ok');
+    expect(outcome.feed).toHaveLength(7);
+    expect(outcome.feed.filter((v) => v.itemId === 1).map((v) => v.videoId).sort()).toEqual(
+      ['o2', 'o3', 'o4', 'o5', 'o6'],
+    );
+    expect(outcome.reserve.map((v) => v.videoId)).toEqual(['o1', 'o0']);
+    expect(outcome.feed[0]).toMatchObject({ itemName: expect.any(String), durationSec: 45 });
+    expect(outcome.reports).toEqual([
+      { itemId: 1, name: 'Octopus', results: 7, passed: 7, selected: 5, error: null },
+      { itemId: 2, name: 'Iron', results: 2, passed: 2, selected: 2, error: null },
+    ]);
+    expect(outcome.counts).toEqual({ drawn: 2, results: 9, toCheck: 9, fetched: 9, passed: 9 });
+  });
+
+  it('never puts two videos of one item in a row', async () => {
+    const words = ['ant', 'bee', 'cat', 'dog'];
+    const videos = words.flatMap((word) => [0, 1, 2, 3, 4].map((n) => short(`${word}${n}`, word)));
+    const searches = Object.fromEntries(
+      words.map((word) => [word, [0, 1, 2, 3, 4].map((n) => `${word}${n}`)]),
+    );
+    const { api } = fakeApi(searches, videos);
+    const items = words.map((word, n) => item(n + 1, word));
+    const outcome = await runFetch(input(items, { random: Math.random }), api);
+    if (!outcome.ok) throw new Error('expected ok');
+    expect(outcome.feed).toHaveLength(20);
+    expect(adjacentRepeats(outcome.feed, (v) => v.itemId)).toBe(0);
+  });
+
+  it('drops watched, listed and shared videos before videos.list', async () => {
     const { api, requested } = fakeApi(
-      { UUa: ['w', 'l', 'x', 'shared'], UUb: ['shared', 'y'] },
-      [short('x'), short('shared'), short('y')],
+      { octopus: ['w', 'l', 'both', 'o1'], squid: ['both', 's1'] },
+      [short('o1', 'octopus'), short('s1', 'squid')],
     );
     const outcome = await runFetch(
-      input({
-        channels: [channel('a'), channel('b')],
+      input([item(1, 'Octopus'), item(2, 'Squid')], {
         watchedIds: new Set(['w']),
         listedIds: new Set(['l']),
       }),
       api,
     );
-    expect(requested).toEqual([['x', 'shared', 'y']]);
-    expect(outcome.counts).toEqual({ channelsRead: 2, uploads: 6, toCheck: 3, fetched: 3 });
+    expect(requested).toEqual([['o1', 's1']]);
+    expect(outcome.counts).toMatchObject({ results: 6, toCheck: 2 });
   });
 
-  it('puts videos new since the last fetch first', async () => {
-    const lastFetchMs = NOW - DAY;
-    const { api } = fakeApi({ UUa: ['old', 'new'] }, [
-      short('old', { viewCount: 900_000 }),
-      short('new', { viewCount: 1_500, publishedAtMs: NOW - DAY / 2 }),
-    ]);
-    const outcome = await runFetch(input({ lastFetchMs }), api);
-    expect(outcome.ok && outcome.feed.map((item) => item.videoId)).toEqual(['new', 'old']);
-  });
-
-  it('gives 15 for the feed and up to 10 in reserve', async () => {
-    const ids = Array.from({ length: 30 }, (_, i) => `v${i}`);
+  it('applies the query match rule with each video’s own item', async () => {
     const { api } = fakeApi(
-      { UUa: ids },
-      ids.map((id, i) => short(id, { viewCount: 100_000 - i })),
+      { octopus: ['good', 'bad'] },
+      [short('good', 'octopus'), short('bad', 'volcano')],
     );
-    const outcome = await runFetch(input(), api);
-    expect(outcome.ok && outcome.feed.map((item) => item.videoId)).toEqual(ids.slice(0, 15));
-    expect(outcome.ok && outcome.reserve.map((item) => item.videoId)).toEqual(ids.slice(15, 25));
-  });
-
-  it('uses each channel\'s topics for the keyword rule', async () => {
-    const { api } = fakeApi({ UUboth: ['plain', 'tagged'] }, [
-      short('plain', { channelId: 'both', title: 'A cool fact' }),
-      short('tagged', { channelId: 'both', title: 'Churchill in 1940' }),
+    const outcome = await runFetch(input([item(1, 'Octopus')]), api);
+    if (!outcome.ok) throw new Error('expected ok');
+    expect(outcome.feed.map((v) => v.videoId)).toEqual(['good']);
+    expect(outcome.rejected).toEqual([
+      { videoId: 'bad', rule: 'queryMatch', detail: 'no word from "octopus"' },
     ]);
-    const outcome = await runFetch(input({ channels: [channel('both', ['ww2', 'claude-code'])] }), api);
-    expect(outcome.ok && outcome.feed.map((item) => item.videoId)).toEqual(['tagged']);
-    expect(outcome.ok && outcome.rejected.map((video) => video.rule)).toEqual(['keyword']);
   });
 
-  it('skips a channel whose uploads fail, and goes on with the rest', async () => {
-    const { api } = fakeApi({ UUa: ['s1'], UUgone: error('notFound') }, [short('s1')]);
-    const outcome = await runFetch(input({ channels: [channel('a'), channel('gone')] }), api);
+  it('keeps an item with no results, and skips videos.list when nothing is left', async () => {
+    const { api, requested } = fakeApi({}, []);
+    const outcome = await runFetch(input([item(1, 'Octopus')]), api);
     expect(outcome.ok).toBe(true);
-    expect(outcome.skipped).toEqual([
-      { channelId: 'gone', title: 'Title gone', error: error('notFound') },
-    ]);
-    expect(outcome.counts.channelsRead).toBe(1);
+    expect(requested).toEqual([]);
+    expect(outcome.reports[0]).toMatchObject({ results: 0, selected: 0 });
   });
 
-  it('fails when every channel fails, with the first error', async () => {
-    const { api, requested } = fakeApi({ UUa: error('network'), UUb: error('notFound') }, []);
-    const outcome = await runFetch(input({ channels: [channel('a'), channel('b')] }), api);
+  it('skips an item whose search fails, and goes on', async () => {
+    const { api } = fakeApi(
+      { octopus: error('other'), iron: ['i0'] },
+      [short('i0', 'iron')],
+    );
+    const outcome = await runFetch(input([item(1, 'Octopus'), item(2, 'Iron')]), api);
+    if (!outcome.ok) throw new Error('expected ok');
+    expect(outcome.skipped).toEqual([{ itemId: 1, name: 'Octopus', error: error('other') }]);
+    expect(outcome.reports[0].error).toBe('other');
+    expect(outcome.feed.map((v) => v.videoId)).toEqual(['i0']);
+  });
+
+  it('fails when every search fails', async () => {
+    const { api } = fakeApi({ octopus: error('network') }, []);
+    const outcome = await runFetch(input([item(1, 'Octopus')]), api);
     expect(outcome).toMatchObject({ ok: false, error: error('network') });
-    expect(outcome.skipped).toHaveLength(2);
-    expect(requested).toEqual([]);
   });
 
-  it('stops on a quota error even if other channels worked', async () => {
-    const { api, requested } = fakeApi({ UUa: ['s1'], UUb: error('quotaExceeded') }, [short('s1')]);
-    const outcome = await runFetch(input({ channels: [channel('a'), channel('b')] }), api);
-    expect(outcome).toMatchObject({ ok: false, error: error('quotaExceeded'), skipped: [] });
-    expect(requested).toEqual([]);
-  });
+  it.each<YoutubeErrorKind>(['quotaExceeded', 'badKey'])(
+    'stops at a %s error without sending the remaining searches',
+    async (kind) => {
+      const items = Array.from({ length: 12 }, (_, n) => item(n + 1, `thing${n}`));
+      const { api, sent, requested } = fakeApi({ thing0: error(kind) }, []);
+      const outcome = await runFetch(input(items), api);
+      expect(outcome).toMatchObject({ ok: false, error: error(kind) });
+      expect(sent).toHaveLength(SEARCH_BATCH);
+      expect(requested).toEqual([]);
+    },
+  );
 
   it('fails when videos.list fails', async () => {
-    const { api } = fakeApi({ UUa: ['s1'] }, [], error('quotaExceeded'));
-    const outcome = await runFetch(input(), api);
+    const { api } = fakeApi({ octopus: ['o1'] }, [], error('quotaExceeded'));
+    const outcome = await runFetch(input([item(1, 'Octopus')]), api);
     expect(outcome).toMatchObject({ ok: false, error: error('quotaExceeded') });
-    expect(outcome.counts).toEqual({ channelsRead: 1, uploads: 1, toCheck: 1, fetched: 0 });
+    expect(outcome.reports[0].results).toBe(1);
   });
+});
 
-  it('returns an empty list without calling videos.list when nothing is new', async () => {
-    const { api, requested } = fakeApi({ UUa: ['w'] }, [short('w')]);
-    const outcome = await runFetch(input({ watchedIds: new Set(['w']) }), api);
-    expect(outcome).toMatchObject({ ok: true, feed: [], reserve: [], rejected: [] });
-    expect(requested).toEqual([]);
-  });
-
-  it('counts videos YouTube left out as not fetched', async () => {
-    const { api } = fakeApi({ UUa: ['s1', 'deleted'] }, [short('s1')]);
-    const outcome = await runFetch(input(), api);
-    expect(outcome.counts).toEqual({ channelsRead: 1, uploads: 2, toCheck: 2, fetched: 1 });
-  });
-
-  it('returns an empty list when there are no channels', async () => {
-    const { api } = fakeApi({}, []);
-    const outcome = await runFetch(input({ channels: [] }), api);
-    expect(outcome).toMatchObject({ ok: true, feed: [], skipped: [] });
+describe('stopsFetch', () => {
+  it('stops on key and quota errors only', () => {
+    expect(stopsFetch(error('quotaExceeded'))).toBe(true);
+    expect(stopsFetch(error('noKey'))).toBe(true);
+    expect(stopsFetch(error('network'))).toBe(false);
+    expect(stopsFetch(error('notFound'))).toBe(false);
   });
 });
 
 describe('failedBeforeStart', () => {
-  it('reports the error with zero counts', () => {
-    expect(failedBeforeStart(error('noKey'))).toEqual({
-      ok: false,
-      error: error('noKey'),
-      skipped: [],
-      counts: { channelsRead: 0, uploads: 0, toCheck: 0, fetched: 0 },
-    });
-  });
-});
-
-describe('filterContext', () => {
-  it('maps each channel to its topics', () => {
-    const context = filterContext([channel('a', ['ww2']), channel('b', ['ww2', 'claude-code'])], NOW);
-    expect(context.nowMs).toBe(NOW);
-    expect(context.channelTopics.get('b')).toEqual(['ww2', 'claude-code']);
-    expect(context.topics.map((topic) => topic.id)).toEqual(['ww2', 'claude-code']);
-    expect(context.blockedWords.length).toBeGreaterThan(0);
+  it('reports the error with nothing drawn', () => {
+    expect(failedBeforeStart(error('noKey'))).toMatchObject({ ok: false, drawn: [], reports: [] });
   });
 });
 
 describe('toNewFeedItem', () => {
-  it('falls back to the saved channel name when YouTube sends none', () => {
-    const titles = new Map([['a', 'Saved A']]);
-    expect(toNewFeedItem(short('s1', { channelTitle: '' }), titles).channelTitle).toBe('Saved A');
-    expect(toNewFeedItem(short('s1'), titles).channelTitle).toBe('Channel A');
+  it('keeps the item id and name with the video', () => {
+    expect(toNewFeedItem(short('x', 'octopus'), { id: 4, name: 'Octopus' })).toEqual({
+      videoId: 'x',
+      itemId: 4,
+      itemName: 'Octopus',
+      title: 'All about the octopus',
+      durationSec: 45,
+    });
   });
 });

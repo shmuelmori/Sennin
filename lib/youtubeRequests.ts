@@ -1,17 +1,14 @@
-// Builds the query parameters for the three YouTube Data API calls the app
-// makes (spec §5, CLAUDE.md). services/youtube.ts sends them. search.list is
-// never used: it costs 100 units per call.
+// Builds the query parameters for the two YouTube Data API calls the app
+// makes (spec §5, CLAUDE.md): search.list once per drawn item, and
+// videos.list in batches of 50. services/youtube.ts sends them.
 
-import type { ChannelInput } from './channelInput';
+import type { ItemSearch } from './searchQuery';
 
-export type Endpoint = 'channels' | 'playlistItems' | 'videos';
+export type Endpoint = 'search' | 'videos';
 
 export type QueryParams = Readonly<Record<string, string>>;
 
-/** A channel to look up: what parseChannelInput returns for valid input. */
-export type ChannelLookup = Exclude<ChannelInput, { kind: 'invalid' }>;
-
-/** videos.list and playlistItems.list take at most 50 per request. */
+/** videos.list takes at most 50 IDs per request. */
 export const MAX_PER_REQUEST = 50;
 
 /**
@@ -24,15 +21,25 @@ export const EMBED_MAX_HEIGHT = 1080;
 /** Extra parts cost no extra units (spec §5 step 3). */
 const VIDEO_PARTS = ['snippet', 'contentDetails', 'statistics', 'status', 'player', 'liveStreamingDetails'];
 
-export function channelParams(lookup: ChannelLookup): QueryParams {
-  const part = 'snippet,contentDetails';
-  return lookup.kind === 'handle'
-    ? { part, forHandle: `@${lookup.handle}` }
-    : { part, id: lookup.channelId };
-}
+/** Results per search (spec §5 step 2). */
+export const SEARCH_RESULTS = 25;
 
-export function uploadsParams(playlistId: string): QueryParams {
-  return { part: 'contentDetails', playlistId, maxResults: String(MAX_PER_REQUEST) };
+/**
+ * search.list for one item (spec §5 step 2): English Shorts-length videos,
+ * moderate safe search. `part=id` is enough, because videos.list reads the
+ * details. The q and order come from itemSearch in lib/searchQuery.ts.
+ */
+export function searchParams({ q, order }: ItemSearch): QueryParams {
+  return {
+    part: 'id',
+    q,
+    type: 'video',
+    videoDuration: 'short',
+    relevanceLanguage: 'en',
+    safeSearch: 'moderate',
+    maxResults: String(SEARCH_RESULTS),
+    order,
+  };
 }
 
 /** For one batch of at most MAX_PER_REQUEST IDs. */
@@ -49,7 +56,7 @@ export function videosParams(videoIds: readonly string[]): QueryParams {
 
 /**
  * Encodes parameters as a query string. Built by hand because React Native's
- * URLSearchParams is incomplete. Hebrew handles get percent-encoded.
+ * URLSearchParams is incomplete. Spaces and Hebrew get percent-encoded.
  */
 export function buildQuery(params: QueryParams): string {
   return Object.entries(params)

@@ -1,35 +1,23 @@
 import {
   buildQuery,
-  channelParams,
   chunk,
   EMBED_MAX_HEIGHT,
   MAX_PER_REQUEST,
-  uploadsParams,
+  searchParams,
   videosParams,
 } from './youtubeRequests';
 
-describe('channelParams', () => {
-  it('looks up a handle with forHandle and a leading "@"', () => {
-    expect(channelParams({ kind: 'handle', handle: '3blue1brown' })).toEqual({
-      part: 'snippet,contentDetails',
-      forHandle: '@3blue1brown',
-    });
-  });
-
-  it('looks up a channel ID with id', () => {
-    expect(channelParams({ kind: 'channelId', channelId: 'UCYO_jab_esuFRV4b17AJtAw' })).toEqual({
-      part: 'snippet,contentDetails',
-      id: 'UCYO_jab_esuFRV4b17AJtAw',
-    });
-  });
-});
-
-describe('uploadsParams', () => {
-  it('asks for the latest 50 items of the playlist', () => {
-    expect(uploadsParams('UUYO_jab_esuFRV4b17AJtAw')).toEqual({
-      part: 'contentDetails',
-      playlistId: 'UUYO_jab_esuFRV4b17AJtAw',
-      maxResults: '50',
+describe('searchParams', () => {
+  it('asks for 25 English short videos with moderate safe search', () => {
+    expect(searchParams({ q: 'octopus explained', order: 'viewCount' })).toEqual({
+      part: 'id',
+      q: 'octopus explained',
+      type: 'video',
+      videoDuration: 'short',
+      relevanceLanguage: 'en',
+      safeSearch: 'moderate',
+      maxResults: '25',
+      order: 'viewCount',
     });
   });
 });

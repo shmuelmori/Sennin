@@ -2,10 +2,10 @@ import {
   applyFilters,
   checkBlockedWords,
   checkEmbeddable,
-  checkKeyword,
   checkLength,
   checkLive,
   checkMinViews,
+  checkQueryMatch,
   checkVertical,
   checkVideo,
   countRejectionsByRule,
@@ -13,7 +13,8 @@ import {
   NEW_VIDEO_GRACE_MS,
   type VideoCandidate,
 } from './filterRules';
-import { BLOCKED_WORDS, TOPICS, type TopicId } from './topics';
+import { BLOCKED_WORDS } from './blockedWords';
+import { queryTerms } from './searchQuery';
 
 const NOW = Date.UTC(2026, 10, 6, 12, 0, 0);
 const HOUR = 60 * 60 * 1000;
@@ -24,6 +25,7 @@ function video(overrides: Partial<VideoCandidate> = {}): VideoCandidate {
     channelId: 'chanWw2',
     title: 'The tank that changed the war',
     description: '',
+    tags: [],
     publishedAtMs: NOW - 10 * 24 * HOUR,
     durationSec: 59,
     embedWidth: 720,
@@ -36,13 +38,15 @@ function video(overrides: Partial<VideoCandidate> = {}): VideoCandidate {
   };
 }
 
-function context(channelTopics: Record<string, TopicId[]> = { chanWw2: ['ww2'] }): FilterContext {
-  return {
-    nowMs: NOW,
-    channelTopics: new Map(Object.entries(channelTopics)),
-    topics: TOPICS,
-    blockedWords: BLOCKED_WORDS,
-  };
+/** Every video comes from the search for `query` unless `queries` says otherwise. */
+function context(queries: Record<string, string> = {}): FilterContext {
+  const map = new Map(
+    ['vid1', 'a', 'b', 'c', 'd'].map((id) => [id, { query: 'tank', terms: queryTerms('tank') }]),
+  );
+  for (const [videoId, query] of Object.entries(queries)) {
+    map.set(videoId, { query, terms: queryTerms(query) });
+  }
+  return { nowMs: NOW, queries: map, blockedWords: BLOCKED_WORDS };
 }
 
 describe('checkLive', () => {
@@ -129,35 +133,38 @@ describe('checkBlockedWords', () => {
   });
 });
 
-describe('checkKeyword', () => {
-  const offTopic = video({ title: 'Napoleon at Waterloo', description: 'History short' });
+describe('checkQueryMatch', () => {
+  const terms = queryTerms('black holes');
 
-  it('exempts a channel with exactly one topic', () => {
-    expect(checkKeyword(offTopic, ['ww2'], TOPICS)).toBeNull();
+  it('passes a video with a query word in the title', () => {
+    expect(checkQueryMatch(video({ title: 'What is inside a black hole?' }), terms, 'black holes')).toBeNull();
   });
 
-  it('rejects an off-topic video from a channel with both topics', () => {
-    expect(checkKeyword(offTopic, ['ww2', 'claude-code'], TOPICS)).toEqual({
-      rule: 'keyword',
-      detail: 'no keyword for World War II, Claude Code',
+  it('finds a query word in the description', () => {
+    const v = video({ title: 'Space is weird', description: 'All about holes in space' });
+    expect(checkQueryMatch(v, terms, 'black holes')).toBeNull();
+  });
+
+  it('finds a query word in the tags', () => {
+    const v = video({ title: 'Space is weird', tags: ['astronomy', 'Black Hole'] });
+    expect(checkQueryMatch(v, terms, 'black holes')).toBeNull();
+  });
+
+  it('rejects a video with no query word, naming the query', () => {
+    expect(checkQueryMatch(video({ title: 'Space is weird' }), terms, 'black holes')).toEqual({
+      rule: 'queryMatch',
+      detail: 'no word from "black holes"',
     });
   });
 
-  it.each([
-    ['World War II', 'Why Stalingrad mattered'],
-    ['Claude Code', 'Writing a CLAUDE.md file'],
-  ])('passes a %s keyword for a channel with both topics', (_topic, title) => {
-    expect(checkKeyword(video({ title }), ['ww2', 'claude-code'], TOPICS)).toBeNull();
+  it('matches whole words only', () => {
+    expect(checkQueryMatch(video({ title: 'Ironic facts' }), queryTerms('iron'), 'iron')?.rule).toBe(
+      'queryMatch',
+    );
   });
 
-  it('finds a keyword in the description', () => {
-    const v = video({ title: 'A short history', description: '#ww2 #history' });
-    expect(checkKeyword(v, ['ww2', 'claude-code'], TOPICS)).toBeNull();
-  });
-
-  it('checks every topic for a channel with no topics', () => {
-    expect(checkKeyword(video({ title: 'Claude tips' }), [], TOPICS)).toBeNull();
-    expect(checkKeyword(offTopic, [], TOPICS)?.rule).toBe('keyword');
+  it('passes when there are no terms', () => {
+    expect(checkQueryMatch(video({ title: 'Anything' }), [], '')).toBeNull();
   });
 });
 
@@ -203,24 +210,31 @@ describe('checkVideo', () => {
     expect(checkVideo(v, context())?.rule).toBe('live');
   });
 
-  it("uses the topics of the video's own channel", () => {
-    const v = video({ channelId: 'chanBoth', title: 'Napoleon at Waterloo' });
-    const ctx = context({ chanWw2: ['ww2'], chanBoth: ['ww2', 'claude-code'] });
-    expect(checkVideo(v, ctx)?.rule).toBe('keyword');
+  it("uses the query of the video's own search", () => {
+    expect(checkVideo(video(), context({ vid1: 'octopus' }))?.rule).toBe('queryMatch');
+  });
+
+  it('runs the query match after the minimum views', () => {
+    const v = video({ viewCount: 3 });
+    expect(checkVideo(v, context({ vid1: 'octopus' }))?.rule).toBe('minViews');
+  });
+
+  it('skips the query match for a video with no known search', () => {
+    expect(checkVideo(video({ videoId: 'unknown' }), context())).toBeNull();
   });
 });
 
 describe('applyFilters', () => {
   it('splits videos into passed and rejected, keeping order and extra fields', () => {
     const videos = [
-      { ...video({ videoId: 'a' }), channelTitle: 'Epic History' },
-      { ...video({ videoId: 'b', durationSec: 300 }), channelTitle: 'Epic History' },
-      { ...video({ videoId: 'c', embeddable: false }), channelTitle: 'Epic History' },
-      { ...video({ videoId: 'd' }), channelTitle: 'Epic History' },
+      { ...video({ videoId: 'a' }), itemName: 'Tanks' },
+      { ...video({ videoId: 'b', durationSec: 300 }), itemName: 'Tanks' },
+      { ...video({ videoId: 'c', embeddable: false }), itemName: 'Tanks' },
+      { ...video({ videoId: 'd' }), itemName: 'Tanks' },
     ];
     const result = applyFilters(videos, context());
     expect(result.passed.map((v) => v.videoId)).toEqual(['a', 'd']);
-    expect(result.passed[0].channelTitle).toBe('Epic History');
+    expect(result.passed[0].itemName).toBe('Tanks');
     expect(result.rejected).toEqual([
       { videoId: 'b', rule: 'length', detail: '300 s' },
       { videoId: 'c', rule: 'embeddable', detail: 'not embeddable' },
@@ -245,8 +259,8 @@ describe('countRejectionsByRule', () => {
       vertical: 1,
       embeddable: 0,
       blockedWord: 0,
-      keyword: 0,
       minViews: 0,
+      queryMatch: 0,
     });
   });
 

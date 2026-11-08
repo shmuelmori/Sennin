@@ -8,8 +8,8 @@ function item(
   return {
     position,
     videoId: `video${String(position).padStart(6, '0')}`,
-    channelId: 'UC123',
-    channelTitle: 'Channel',
+    itemId: 1,
+    itemName: 'Octopus',
     title: `Video ${position}`,
     durationSec: 60,
     isReserve: overrides.isReserve ?? false,

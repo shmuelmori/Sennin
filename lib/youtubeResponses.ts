@@ -5,22 +5,11 @@
 
 import { parseDurationSec } from './duration';
 import type { VideoCandidate } from './filterRules';
-import type { NewChannel } from './records';
 
 export type YtListResponse<T> = { items?: T[] };
 
-type YtThumbnail = { url?: string };
-
-export type YtChannel = {
-  id?: string;
-  snippet?: {
-    title?: string;
-    thumbnails?: { default?: YtThumbnail; medium?: YtThumbnail; high?: YtThumbnail };
-  };
-  contentDetails?: { relatedPlaylists?: { uploads?: string } };
-};
-
-export type YtPlaylistItem = { contentDetails?: { videoId?: string } };
+/** One search.list result. With type=video every result is a video. */
+export type YtSearchResult = { id?: { kind?: string; videoId?: string } };
 
 export type YtVideo = {
   id?: string;
@@ -29,6 +18,7 @@ export type YtVideo = {
     channelTitle?: string;
     title?: string;
     description?: string;
+    tags?: string[];
     publishedAt?: string;
     liveBroadcastContent?: string;
   };
@@ -42,35 +32,13 @@ export type YtVideo = {
   liveStreamingDetails?: object;
 };
 
-/** A channel as channels.list resolves it (F1). The caller adds addedAtMs. */
-export type ResolvedChannel = Omit<NewChannel, 'addedAtMs'>;
-
 /** A video from videos.list, ready for the filter rules and the feed. */
 export type FetchedVideo = VideoCandidate & { channelTitle: string };
 
-/** Returns null if the channel has no ID or no uploads playlist. */
-export function toResolvedChannel(item: YtChannel): ResolvedChannel | null {
-  const channelId = item.id;
-  const uploadsPlaylistId = item.contentDetails?.relatedPlaylists?.uploads;
-  if (!channelId || !uploadsPlaylistId) {
-    return null;
-  }
-  const thumbnails = item.snippet?.thumbnails;
-  // "medium" is 240 px, sharp enough for the Sources list. "default" is only 88 px.
-  const thumbnailUrl =
-    thumbnails?.medium?.url ?? thumbnails?.default?.url ?? thumbnails?.high?.url ?? null;
-  return {
-    channelId,
-    title: item.snippet?.title ?? channelId,
-    uploadsPlaylistId,
-    thumbnailUrl,
-  };
-}
-
-/** The video IDs in a playlistItems.list response, in order, without repeats. */
-export function toVideoIds(response: YtListResponse<YtPlaylistItem>): string[] {
+/** The video IDs in a search.list response, in order, without repeats. */
+export function toSearchVideoIds(response: YtListResponse<YtSearchResult>): string[] {
   const ids = (response.items ?? [])
-    .map((item) => item.contentDetails?.videoId)
+    .map((item) => item.id?.videoId)
     .filter((id): id is string => typeof id === 'string' && id !== '');
   return [...new Set(ids)];
 }
@@ -98,6 +66,7 @@ export function toFetchedVideo(item: YtVideo): FetchedVideo | null {
     channelTitle: snippet?.channelTitle ?? '',
     title: snippet?.title ?? '',
     description: snippet?.description ?? '',
+    tags: (snippet?.tags ?? []).filter((tag): tag is string => typeof tag === 'string'),
     // A missing date counts as old, so the minimum-views rule still applies.
     publishedAtMs: Number.isNaN(publishedAtMs) ? 0 : publishedAtMs,
     durationSec: duration === undefined ? null : parseDurationSec(duration),

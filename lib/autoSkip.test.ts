@@ -10,8 +10,8 @@ function item(
   return {
     position,
     videoId,
-    channelId: 'UC123',
-    channelTitle: 'Channel',
+    itemId: 1,
+    itemName: 'Octopus',
     title: `Video ${videoId}`,
     durationSec: 60,
     isReserve: overrides.isReserve ?? false,

@@ -48,7 +48,7 @@ export function snapTargetIndex(
 }
 
 export type FeedPageLayout = {
-  /** Height of the strip at the top of the page, for the channel name and title (§4). */
+  /** Height of the strip at the top of the page, for the item name and title (§4). */
   infoHeight: number;
   /** The player's size. It sits right under the strip, centered across the page. */
   player: Size;

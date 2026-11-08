@@ -14,8 +14,8 @@ function item(videoId: string, status: FeedStatus = 'unseen'): FeedItem {
   return {
     position: 0,
     videoId,
-    channelId: 'UC123',
-    channelTitle: 'Channel',
+    itemId: 1,
+    itemName: 'Octopus',
     title: 'Title',
     durationSec: 60,
     isReserve: false,

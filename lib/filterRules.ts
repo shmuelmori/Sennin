@@ -3,7 +3,6 @@
 // rejection can be logged in fetch_log (F5) and tested.
 
 import { findTerm } from './textMatch';
-import type { Topic, TopicId } from './topics';
 
 /** The YouTube Shorts length limit (spec §9). */
 export const MAX_SHORT_SEC = 180;
@@ -17,6 +16,8 @@ export type VideoCandidate = {
   channelId: string;
   title: string;
   description: string;
+  /** snippet.tags; empty if the video has none. */
+  tags: readonly string[];
   publishedAtMs: number;
   /** From contentDetails.duration via parseDurationSec; null if it didn't parse. */
   durationSec: number | null;
@@ -39,8 +40,8 @@ export const RULE_NAMES = [
   'vertical',
   'embeddable',
   'blockedWord',
-  'keyword',
   'minViews',
+  'queryMatch',
 ] as const;
 
 export type RuleName = (typeof RULE_NAMES)[number];
@@ -103,27 +104,20 @@ export function checkBlockedWords(
 }
 
 /**
- * A channel assigned to exactly one topic is exempt (spec §5). Otherwise the
- * title or description needs a keyword from one of the channel's topics, or
- * from any topic if the channel has none.
+ * A word from the item's search query appears in the title, description or
+ * tags (spec §5). `terms` comes from queryTerms in lib/searchQuery.ts; with
+ * none, the video passes.
  */
-export function checkKeyword(
+export function checkQueryMatch(
   video: VideoCandidate,
-  channelTopicIds: readonly TopicId[],
-  topics: readonly Topic[],
+  terms: readonly string[],
+  query: string,
 ): RuleResult {
-  if (channelTopicIds.length === 1) {
+  if (terms.length === 0) {
     return null;
   }
-  const relevant =
-    channelTopicIds.length === 0
-      ? topics
-      : topics.filter((topic) => channelTopicIds.includes(topic.id));
-  const keywords = relevant.flatMap((topic) => topic.keywords);
-  if (findTerm(searchableText(video), keywords) !== null) {
-    return null;
-  }
-  return reject('keyword', `no keyword for ${relevant.map((topic) => topic.name).join(', ')}`);
+  const text = `${searchableText(video)}\n${video.tags.join('\n')}`;
+  return findTerm(text, terms) === null ? reject('queryMatch', `no word from "${query}"`) : null;
 }
 
 export function checkMinViews(video: VideoCandidate, nowMs: number): RuleResult {
@@ -139,29 +133,32 @@ export function checkMinViews(video: VideoCandidate, nowMs: number): RuleResult 
   return null;
 }
 
+/** The search a video came from, for the query match rule. */
+export type VideoQuery = { query: string; terms: readonly string[] };
+
 export type FilterContext = {
   nowMs: number;
-  /** The topics each channel is assigned to (F3), keyed by channelId. */
-  channelTopics: ReadonlyMap<string, readonly TopicId[]>;
-  topics: readonly Topic[];
+  /** The search each video came from, keyed by videoId. A video missing here skips the rule. */
+  queries: ReadonlyMap<string, VideoQuery>;
   blockedWords: readonly string[];
 };
 
 /**
- * Runs the rules in a fixed order and returns the first rejection, or null if
+ * Runs the rules in a fixed order (spec §5) and returns the first rejection, or null if
  * the video passes them all. Live streams come first because they report a
  * duration of 0, and the Shorts checks (length, vertical) come next, so the
  * counts per rule show how Shorts detection performs.
  */
 export function checkVideo(video: VideoCandidate, context: FilterContext): RuleResult {
+  const search = context.queries.get(video.videoId);
   return (
     checkLive(video) ??
     checkLength(video) ??
     checkVertical(video) ??
     checkEmbeddable(video) ??
     checkBlockedWords(video, context.blockedWords) ??
-    checkKeyword(video, context.channelTopics.get(video.channelId) ?? [], context.topics) ??
-    checkMinViews(video, context.nowMs)
+    checkMinViews(video, context.nowMs) ??
+    checkQueryMatch(video, search?.terms ?? [], search?.query ?? '')
   );
 }
 

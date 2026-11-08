@@ -6,7 +6,7 @@ export type YoutubeErrorKind =
   | 'badKey' // YouTube rejected the key (invalid or expired)
   | 'keyRestricted' // the key may not call this API (its restrictions, or the API is disabled)
   | 'quotaExceeded' // the 10,000 daily units are used up
-  | 'notFound' // the channel or playlist doesn't exist
+  | 'notFound' // what was asked for doesn't exist
   | 'network' // no response: offline or timed out
   | 'other'; // any other HTTP error, or a response that isn't JSON
 

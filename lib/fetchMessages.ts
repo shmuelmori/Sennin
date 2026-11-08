@@ -1,21 +1,22 @@
-// What a finished fetch turns into (F4, F5, step 6.2): the fetch_log row, the
-// message the Feed shows after Refresh, and the [fetch] lines for the Expo terminal.
+// What a finished fetch turns into (F4, F5): the fetch_log row, the message
+// the Refresh tab shows, and the [fetch] lines for the Expo terminal.
 
 import { countRejectionsByRule, RULE_NAMES, type RejectedVideo } from './filterRules';
-import type { FetchOutcome } from './fetchPipeline';
+import type { FetchOutcome, SkippedItem } from './fetchPipeline';
+import { MIN_UNITS_TO_FETCH, unitsLeft } from './quota';
 import type { NewFetchLog } from './records';
 import { describeYoutubeError, type YoutubeError } from './youtubeErrors';
 
 export type FetchMessage = { title: string; message: string };
 
-export const NO_CHANNELS_MESSAGE: FetchMessage = {
-  title: 'No channels yet',
-  message: 'Add channels in Sources, then tap Refresh.',
+export const NO_ITEMS_MESSAGE: FetchMessage = {
+  title: 'No topics to draw',
+  message: 'Every topic is removed. Add or restore some in Topics, then tap Refresh.',
 };
 
 export const READ_FAILED_MESSAGE: FetchMessage = {
   title: "Couldn't refresh",
-  message: "Couldn't read your saved channels and list.",
+  message: "Couldn't read your saved topics and list.",
 };
 
 export const SAVE_FAILED_MESSAGE: FetchMessage = {
@@ -24,6 +25,17 @@ export const SAVE_FAILED_MESSAGE: FetchMessage = {
 };
 
 const LIST_STAYS = 'Your current list stays.';
+
+/** Why Refresh is disabled (spec §5 "Quota"), with the units left today. */
+export function quotaLowMessage(unitsUsedToday: number): FetchMessage {
+  return {
+    title: 'Not enough quota today',
+    message:
+      `${unitsLeft(unitsUsedToday).toLocaleString('en-US')} API units are left today, and a ` +
+      `fetch needs ${MIN_UNITS_TO_FETCH.toLocaleString('en-US')}. ` +
+      'The quota resets at midnight Pacific time.',
+  };
+}
 
 type DoneOutcome = Extract<FetchOutcome, { ok: true }>;
 
@@ -41,8 +53,12 @@ export function formatError(error: YoutubeError): string {
   return `${error.kind} (HTTP ${error.status ?? '-'}): ${error.message}`;
 }
 
+function skippedLine(item: SkippedItem): string {
+  return `skipped ${item.name} (item ${item.itemId}): ${formatError(item.error)}`;
+}
+
 /**
- * The fetch_log.error text: why the fetch failed, which channels it skipped,
+ * The fetch_log.error text: why the fetch failed, which items it skipped,
  * and `extra` (e.g. a failed save), joined by "; ". null if there's nothing to report.
  */
 export function fetchLogError(outcome: FetchOutcome, extra: string | null = null): string | null {
@@ -50,27 +66,27 @@ export function fetchLogError(outcome: FetchOutcome, extra: string | null = null
   if (!outcome.ok) {
     parts.push(`failed: ${formatError(outcome.error)}`);
   }
-  for (const channel of outcome.skipped) {
-    parts.push(`skipped ${channel.title} (${channel.channelId}): ${formatError(channel.error)}`);
-  }
+  parts.push(...outcome.skipped.map(skippedLine));
   if (extra !== null) {
     parts.push(extra);
   }
   return parts.length === 0 ? null : parts.join('; ');
 }
 
-/** The fetch_log row (F5): every rejected video with its rule, the units used and when it ran. */
+/** The fetch_log row (F5): the drawn items, every rejected video with its rule, the units and the time. */
 export function toFetchLog(
   outcome: FetchOutcome,
   startedAtMs: number,
-  finishedAtMs: number,
+  durationMs: number,
   quotaUsed: number,
   extraError: string | null = null,
 ): NewFetchLog {
   return {
     startedAtMs,
-    finishedAtMs,
+    durationMs,
+    itemsPicked: outcome.reports,
     fetched: outcome.counts.fetched,
+    passed: outcome.counts.passed,
     rejected: outcome.ok ? outcome.rejected : [],
     quotaUsed,
     error: fetchLogError(outcome, extraError),
@@ -80,7 +96,7 @@ export function toFetchLog(
 function describeFetchError(error: YoutubeError): string {
   // describeYoutubeError's "YouTube couldn't find it." is unclear for a whole fetch.
   return error.kind === 'notFound'
-    ? "YouTube couldn't find your channels' uploads."
+    ? "YouTube couldn't find any videos for your topics."
     : describeYoutubeError(error);
 }
 
@@ -96,16 +112,18 @@ export function describeFetchOutcome(outcome: FetchOutcome): FetchMessage {
   let title: string;
   if (outcome.feed.length === 0) {
     title = 'No new videos found';
-    lines.push(`Your channels have no new Shorts that pass the filters. ${LIST_STAYS}`);
+    lines.push(`The drawn topics have no new Shorts that pass the filters. ${LIST_STAYS}`);
   } else {
     title = 'New list ready';
     const reserve =
       outcome.reserve.length === 0 ? 'no reserve' : `plus ${outcome.reserve.length} in reserve`;
-    lines.push(`${plural(outcome.feed.length, 'video')}, ${reserve}.`);
+    lines.push(
+      `${plural(outcome.feed.length, 'video')} from ${plural(outcome.drawn.length, 'topic')}, ${reserve}.`,
+    );
   }
   if (outcome.skipped.length > 0) {
-    const names = outcome.skipped.map((channel) => channel.title).join(', ');
-    lines.push(`Skipped ${plural(outcome.skipped.length, 'channel')} YouTube couldn't read: ${names}.`);
+    const names = outcome.skipped.map((item) => item.name).join(', ');
+    lines.push(`Skipped ${plural(outcome.skipped.length, 'topic')} YouTube couldn't search: ${names}.`);
   }
   return { title, message: lines.join('\n\n') };
 }
@@ -118,25 +136,26 @@ export function formatSeconds(durationMs: number): string {
 /** The [fetch] summary for the Expo terminal: counts, units and time (§8 targets). */
 export function fetchSummaryLines(
   outcome: FetchOutcome,
-  channelCount: number,
   quotaUsed: number,
   durationMs: number,
 ): string[] {
   const cost = `${plural(quotaUsed, 'unit')}, ${formatSeconds(durationMs)}`;
-  const lines = outcome.skipped.map(
-    (channel) => `skipped ${channel.title} (${channel.channelId}): ${formatError(channel.error)}`,
-  );
+  const lines = outcome.skipped.map(skippedLine);
   if (!outcome.ok) {
     lines.push(`failed: ${formatError(outcome.error)}, ${cost}`);
     return lines;
   }
-  const { channelsRead, uploads, toCheck, fetched } = outcome.counts;
-  const rejected = outcome.rejected.length;
+  const { drawn, results, toCheck, fetched, passed } = outcome.counts;
   lines.push(
-    `${channelsRead} of ${plural(channelCount, 'channel')} read, ${uploads} uploads, ` +
-      `${toCheck} to check, ${fetched} fetched (${toCheck - fetched} private or deleted)`,
+    `${plural(drawn, 'topic')} drawn, ${results} results, ${toCheck} to check, ` +
+      `${fetched} fetched (${toCheck - fetched} private or deleted)`,
   );
-  lines.push(`${fetched - rejected} passed, ${rejected} rejected`);
+  lines.push(`${passed} passed, ${outcome.rejected.length} rejected`);
+  for (const report of outcome.reports) {
+    lines.push(
+      `  ${report.name}: ${report.results} results, ${report.passed} passed, ${report.selected} selected`,
+    );
+  }
   lines.push(
     replacesList(outcome)
       ? `new list: ${outcome.feed.length} + ${outcome.reserve.length} reserve, ${cost}`
