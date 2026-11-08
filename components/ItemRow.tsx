@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { TopicIcon } from '@/components/TopicIcon';
 import { textDirection } from '@/lib/textDirection';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fontSize, fonts, radius, spacing } from '@/theme';
 
 type Props = {
   name: string;
@@ -10,12 +11,13 @@ type Props = {
   onRestore: () => void;
 };
 
-// One item on the Topics tab (§4): its name, or for a removed item the name
-// in grey with a "Restore" button. The name takes the direction of its own
-// text, like the titles in the feed.
+// One item on the Topics tab (§4) as a glass card: its icon and name, or for
+// a removed item both in grey with a "Restore" button. The name takes the
+// direction of its own text, like the titles in the feed.
 export function ItemRow({ name, removed, onRestore }: Props) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, removed && styles.removedRow]}>
+      <TopicIcon name={name} muted={removed} />
       <Text
         numberOfLines={1}
         style={[styles.name, removed && styles.removed, { direction: textDirection(name) ?? 'inherit' }]}
@@ -42,15 +44,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    minHeight: 48,
+    minHeight: 60,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.deepSeaNight,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.tealMist,
+    backgroundColor: colors.glass,
+  },
+  removedRow: {
+    borderColor: colors.silverMuted,
   },
   name: {
     flex: 1,
     color: colors.silver,
-    fontSize: fontSize.body,
+    fontFamily: fonts.serif,
+    fontSize: fontSize.topic,
   },
   removed: {
     color: colors.silverMuted,

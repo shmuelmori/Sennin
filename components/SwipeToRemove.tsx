@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 
 import { dragDistance, isSideways, offsetFor, shouldOpen, type SwipeDirection } from '@/lib/swipe';
-import { colors, fontSize, spacing } from '@/theme';
+import { colors, fontSize, radius, spacing } from '@/theme';
 
 type Props = {
   children: ReactNode;
@@ -79,11 +79,22 @@ function createSwipeController(
   };
 }
 
+/**
+ * The rows are see-through glass, so the button stays invisible until the
+ * row moves, in either direction.
+ */
+function actionOpacity(offset: Animated.Value) {
+  return offset.interpolate({
+    inputRange: [-BUTTON_WIDTH, -1, 0, 1, BUTTON_WIDTH],
+    outputRange: [1, 1, 0, 1, 1],
+  });
+}
+
 // Swipe-to-delete on the Topics tab (§4), built on React Native's
 // PanResponder so no gesture library is needed. Swiping the row sideways
 // uncovers a Sunset button at the row's end (the left on a right-to-left
-// phone). Tapping it shuts the row and reports the tap; the screen asks for
-// confirmation. Tapping the open row shuts it. Calm motion only: timed
+// phone), invisible until the row moves. Tapping it shuts the row and
+// reports the tap; the screen asks for confirmation. Tapping the open row shuts it. Calm motion only: timed
 // slides, no springs.
 export function SwipeToRemove({ children, actionLabel, accessibilityLabel, onRemove }: Props) {
   const [offset] = useState(() => new Animated.Value(0));
@@ -92,6 +103,7 @@ export function SwipeToRemove({ children, actionLabel, accessibilityLabel, onRem
   const [swipe] = useState(() =>
     createSwipeController(offset, I18nManager.isRTL ? 1 : -1, setOpen),
   );
+  const [opacity] = useState(() => actionOpacity(offset));
 
   const remove = () => {
     swipe.settle(false);
@@ -100,18 +112,17 @@ export function SwipeToRemove({ children, actionLabel, accessibilityLabel, onRem
 
   return (
     <View>
-      <Pressable
-        accessibilityLabel={accessibilityLabel}
-        accessibilityRole="button"
-        onPress={remove}
-        style={({ pressed }) => [styles.action, pressed && styles.pressed]}
-      >
-        <Text style={styles.actionLabel}>{actionLabel}</Text>
-      </Pressable>
-      <Animated.View
-        {...swipe.panHandlers}
-        style={[styles.foreground, { transform: [{ translateX: offset }] }]}
-      >
+      <Animated.View style={[styles.action, { opacity }]}>
+        <Pressable
+          accessibilityLabel={accessibilityLabel}
+          accessibilityRole="button"
+          onPress={remove}
+          style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+        >
+          <Text style={styles.actionLabel}>{actionLabel}</Text>
+        </Pressable>
+      </Animated.View>
+      <Animated.View {...swipe.panHandlers} style={{ transform: [{ translateX: offset }] }}>
         {children}
         {open && (
           <Pressable
@@ -131,9 +142,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     end: 0,
     width: BUTTON_WIDTH,
+  },
+  actionButton: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xs,
+    borderRadius: radius.md,
     backgroundColor: colors.sunset,
   },
   pressed: {
@@ -143,8 +158,5 @@ const styles = StyleSheet.create({
     color: colors.deepSeaNight,
     fontSize: fontSize.body,
     fontWeight: 'bold',
-  },
-  foreground: {
-    backgroundColor: colors.deepSeaNight,
   },
 });

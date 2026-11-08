@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { ScriptTitle } from '@/components/ScriptTitle';
 import { colors, fontSize, radius, sizes, spacing } from '@/theme';
 
 type Props = {
@@ -13,16 +14,32 @@ type Props = {
   onToggleAdd: () => void;
 };
 
-// The top of the Topics tab (§4): the title with the active-of-total counter
-// and a round + button at the header's end, and the search bar that filters
-// the list.
+// The top of the Topics tab (§4) over the background art: the script title
+// with the active-of-total counter at the header's end (over the sun, leaving
+// the Sennin in view), then the search bar that filters the list with the
+// round + button at its end.
 export function TopicsHeader({ counter, search, onSearchChange, adding, onToggleAdd }: Props) {
   return (
     <View style={styles.header}>
-      <View style={styles.titleRow}>
-        <View style={styles.titles}>
-          <Text style={styles.title}>Topics</Text>
-          {counter !== null && <Text style={styles.counter}>{counter}</Text>}
+      <View style={styles.hero}>
+        <ScriptTitle text="Topics" size="hero" align="end" />
+        {counter !== null && <Text style={styles.counter}>{counter}</Text>}
+      </View>
+      <View style={styles.searchRow}>
+        <View style={styles.search}>
+          <Ionicons name="search" color={colors.silver} size={22} />
+          <TextInput
+            accessibilityLabel="Search topics"
+            autoCapitalize="none"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            onChangeText={onSearchChange}
+            placeholder="Search topics"
+            placeholderTextColor={colors.silverMuted}
+            returnKeyType="search"
+            style={styles.input}
+            value={search}
+          />
         </View>
         <Pressable
           accessibilityLabel={adding ? 'Close the add form' : 'Add topics'}
@@ -30,50 +47,54 @@ export function TopicsHeader({ counter, search, onSearchChange, adding, onToggle
           onPress={onToggleAdd}
           style={({ pressed }) => [styles.add, pressed && styles.pressed]}
         >
-          <Ionicons name={adding ? 'close' : 'add'} color={colors.deepSeaNight} size={26} />
+          <Ionicons name={adding ? 'close' : 'add'} color={colors.deepSeaNight} size={32} />
         </Pressable>
       </View>
-      <TextInput
-        accessibilityLabel="Search topics"
-        autoCapitalize="none"
-        autoCorrect={false}
-        clearButtonMode="while-editing"
-        onChangeText={onSearchChange}
-        placeholder="Search topics"
-        placeholderTextColor={colors.silverMuted}
-        returnKeyType="search"
-        style={styles.search}
-        value={search}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    gap: spacing.sm + 4,
+    gap: spacing.md,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  titles: {
-    flexShrink: 1,
-    gap: 2,
-  },
-  title: {
-    color: colors.silver,
-    fontSize: fontSize.title,
-    fontWeight: 'bold',
+  hero: {
+    alignItems: 'flex-end',
+    minHeight: 150,
   },
   counter: {
-    color: colors.cherryBlossom,
-    fontSize: fontSize.small,
+    color: colors.silver,
+    fontSize: fontSize.button,
+    paddingHorizontal: spacing.sm,
+    textShadowColor: colors.textShadow,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm + 4,
+  },
+  search: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: colors.tealMist,
+    backgroundColor: colors.glass,
+    boxShadow: `0 0 12px ${colors.tealGlow}`,
+  },
+  input: {
+    flex: 1,
+    color: colors.silver,
+    fontSize: fontSize.body + 2,
+    paddingVertical: spacing.sm + 4,
   },
   add: {
     width: sizes.addButton,
@@ -81,18 +102,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.cherryBlossom,
     backgroundColor: colors.sunset,
+    boxShadow: `0 0 16px ${colors.sunsetGlow}`,
   },
   pressed: {
-    opacity: 0.7,
-  },
-  search: {
-    color: colors.silver,
-    fontSize: fontSize.body,
-    borderColor: colors.tealMist,
-    borderWidth: 1.5,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.sm,
+    opacity: 0.8,
   },
 });
