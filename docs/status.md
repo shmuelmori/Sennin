@@ -118,7 +118,7 @@ One `search.list` call per item:
 | Table | Fields | Change |
 | --- | --- | --- |
 | item | id, name, query, removed, removedAt, lastPickedAt, pickCount, createdAt | New, one flat list |
-| feed\_item | position, videoId, itemId, title, durationSec, isReserve, status | channelId replaced by itemId |
+| feed\_item | position, videoId, itemId, itemName, title, durationSec, isReserve, status | channelId and channelTitle replaced by itemId and itemName |
 | watched | videoId, watchedAt | Unchanged |
 | fetch\_log | startedAt, durationMs, itemsPicked, fetched, passed, rejectedByRule, quotaUsed, error | Added fields |
 | quota\_day | date, unitsUsed | New |

@@ -57,7 +57,7 @@ Questions the POC answers:
 **Feed**
 
 - The item name (e.g. "Octopus") and, under it, the video title in a strip at the top of the page, and the video below it (the largest 9:16 size that fits, down to the tab bar). The strip ends where the player starts, so nothing covers the player. The channel name is no longer shown (2026-11-08). The strip moved from below the player on 2026-11-08.
-- A small remove button at the side of the strip. Tapping it marks the video's item as removed and shows a message with "Undo" for 5 seconds. The removal applies from the next fetch: videos of that item already in today's feed stay.
+- A small remove button at the side of the strip. Tapping it marks the video's item as removed and shows a message with "Undo" for 5 seconds, over the strip (never over the player). The removal applies from the next fetch: videos of that item already in today's feed stay, without the button.
 - Order: videos are shuffled so that two videos of the same item never appear in a row.
 - Swipe up: next video. Swipe down: previous video.
 - Pause and resume use the YouTube player's own controls. The app adds no tap handling of its own, because catching taps would mean covering the player.
@@ -78,7 +78,8 @@ Questions the POC answers:
 - A removed item is shown in grey with a "Restore" button.
 - At the top: a search bar that filters the list, and an "active of total" counter.
 - Add: a + button at the right end of the header opens a text box with an "Add" button. Several items can be entered separated by commas, e.g. "black holes, volcanoes, octopus". Input is trimmed, empty values are ignored, and duplicates are skipped case-insensitively. A new item's search query is the text that was typed. A short message says how many were added and how many were skipped as duplicates.
-- Delete: any item, whatever its origin, can be deleted completely with a swipe, after confirmation.
+- Delete: any item, whatever its origin, can be deleted completely with a swipe, after confirmation. The swipe uncovers a Sunset "Delete" button at the row's end (React Native's PanResponder, no gesture library).
+- An active item has no remove button here: items are removed from the Feed, and restored here (2026-11-08).
 
 **Refresh**
 
@@ -102,7 +103,7 @@ Questions the POC answers:
 - Draw 20 distinct items from the active (not removed) items. If fewer than 20 are active, take all of them.
 - The draw is weighted: an item never drawn has weight 30. Any other item's weight is the number of days since it was last drawn, up to 30. An item drawn today has weight 0.
 
-**2. Search per item:** one `search.list` call per item.
+**2. Search per item:** one `search.list` call per item, 5 at a time. A key or `quotaExceeded` error stops the searches not yet sent.
 
 | Parameter | Value |
 | --- | --- |
@@ -130,7 +131,7 @@ The suffix rotates by pickCount: explained, facts, how, why. Rotating the suffix
 | Embeddable | status.embeddable = true |
 | Blocked words | e.g. "reacts to", "reaction video", giveaway, #meme (not plain "reaction", which also blocks "chain reaction") |
 | Minimum views | 1,000 (does not apply to videos from the last 48 hours) |
-| Query match | A word from the item's query appears in the title, description or tags. Replaces the topic keyword rule (2026-11-08) |
+| Query match | A word from the item's query appears in the title, description or tags, as a whole word, ignoring case. A plural also matches its simple singular ("holes" → "hole"), and common words ("the", "of", "how") are ignored. Replaces the topic keyword rule (2026-11-08) |
 
 The rules run in this order: live stream, length, vertical, embeddable, blocked words, minimum views, query match. Each rejected video is logged with the first rule that rejects it, so the counts per rule add up to the number of rejected videos.
 
@@ -139,12 +140,12 @@ The rules run in this order: live stream, length, vertical, embeddable, blocked 
 - For each item: up to 5 videos that passed, sorted by view count. An item with fewer than 5 keeps what it has and is not replaced by another item.
 - Videos that passed but weren't selected go to the reserve, up to 20 in total.
 - Shuffle the selected videos so no two of the same item are adjacent (§4 Feed).
-- Update `lastPickedAt` and `pickCount` of every drawn item.
+- Update `lastPickedAt` and `pickCount` of every drawn item, once the new list is saved. A fetch that keeps the current list leaves them as they were.
 
 **Quota** (decided on 2026-11-08, replacing the "no search.list, under 100 units" rule)
 
 - A fetch costs 20 × 100 for search plus about 10 for videos.list: about 2,010 units out of 10,000 per day.
-- A daily unit counter (`quota_day`) resets at midnight Pacific Time, like YouTube's quota. `services/youtube.ts` counts the units.
+- A daily unit counter (`quota_day`) resets at midnight Pacific Time, like YouTube's quota. `services/youtube.ts` counts the units; every fetch adds them, a failed one too, since YouTube charges every request it answers. The app only knows its own usage, so the counter is an estimate.
 - With fewer than 2,100 units left today, Refresh is disabled.
 
 When a fetch fails:
@@ -157,7 +158,7 @@ When a fetch fails:
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| F1 | Seed the item list from `db/seed.json` on first launch, when the `item` table is empty. The seed runs only once; mostly small, specific items (octopus, iron, black holes) | Must |
+| F1 | Seed the item list from `db/seed.json` on first launch, when the `item` table is empty. The seed runs only once, in the schema v3 migration; 414 items, mostly small and specific (octopus, iron, black holes) | Must |
 | F2 | Add items on the Topics tab, several at once separated by commas, skipping duplicates | Must |
 | F3 | Remove and restore an item (Topics tab and the Feed's remove button with Undo); delete an item with a swipe | Must |
 | F4 | "Refresh" button runs the full fetch process | Must |
@@ -175,13 +176,14 @@ When a fetch fails:
 | Table | Fields |
 | --- | --- |
 | item | id, name, query, removed, removedAt, lastPickedAt, pickCount, createdAt |
-| feed\_item | position, videoId, itemId, title, durationSec, isReserve, status |
+| feed\_item | position, videoId, itemId, itemName, title, durationSec, isReserve, status |
 | watched | videoId (primary key), watchedAt |
 | fetch\_log | startedAt, durationMs, itemsPicked, fetched, passed, rejectedByRule, quotaUsed, error |
 | quota\_day | date, unitsUsed |
 
-- The `topic`, `channel` and `channel_topic` tables are dropped. The migration drops them and keeps `watched` (2026-11-08).
-- `feed_item.itemId` replaces `channelId` and `channelTitle`. The Feed shows the item's name from `item`.
+- The `topic`, `channel` and `channel_topic` tables are dropped. The migration (schema v3) drops them and keeps `watched`. It also rebuilds `feed_item` and `fetch_log`, so the current list and old fetch logs are gone after the upgrade (2026-11-08).
+- `feed_item.itemId` and `itemName` replace `channelId` and `channelTitle`. The name is saved with each video, so the strip still shows it after the item is deleted.
+- `item.name` is unique ignoring case (`COLLATE NOCASE`).
 - `feed_item.status` is `unseen`, `watched` or `skipped`.
 - `fetch_log.itemsPicked` is a JSON list with one `{itemId, name, results, passed, selected}` per drawn item, for the report (§4 Status).
 - `fetch_log.rejectedByRule` is a JSON list with one `{videoId, rule, detail}` per rejected video (F5). The Status screen counts them per rule. Fetch logs older than 30 days are deleted when a new fetch is saved. Decided on 2026-11-06.
