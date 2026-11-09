@@ -33,7 +33,8 @@ function toFeedItem(row: FeedItemRow): FeedItem {
 
 /**
  * Replaces the whole list in one transaction. The feed videos get positions
- * 0, 1, 2…, the reserve continues after them. Every item starts as unseen.
+ * 0, 1, 2…, the reserve continues after them. Every item starts as unseen,
+ * and the saved Feed page is cleared, so the new list opens at its start.
  */
 export async function replaceFeed(
   db: SQLiteDatabase,
@@ -46,6 +47,7 @@ export async function replaceFeed(
   ];
   await db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM feed_item');
+    await db.runAsync('DELETE FROM feed_position');
     for (const [position, { item, isReserve }] of items.entries()) {
       await db.runAsync(
         `INSERT INTO feed_item

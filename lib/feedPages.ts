@@ -22,13 +22,30 @@ export function toFeedPages(videos: readonly FeedItem[]): FeedPage[] {
   return pages;
 }
 
+/** The page the Feed was last on: a video's ID, or null for the end page. */
+export type SavedFeedPosition = { videoId: string | null };
+
 /**
- * The page the feed opens on: the first video not yet watched, or the end
- * page if every video was watched.
+ * The page the feed opens on: the page it was last on, if one was saved and
+ * that video is still in the feed. Otherwise the first video not yet
+ * watched, or the end page if every video was watched.
  */
-export function startPageIndex(videos: readonly FeedItem[]): number {
+export function startPageIndex(
+  videos: readonly FeedItem[],
+  saved: SavedFeedPosition | null = null,
+): number {
+  if (saved !== null) {
+    if (saved.videoId === null) return videos.length;
+    const savedIndex = videos.findIndex((item) => item.videoId === saved.videoId);
+    if (savedIndex !== -1) return savedIndex;
+  }
   const index = videos.findIndex((item) => item.status === 'unseen');
   return index === -1 ? videos.length : index;
+}
+
+/** The position to save for a page: its video's ID, or null for the end page. */
+export function positionOfPage(videos: readonly FeedItem[], index: number): SavedFeedPosition {
+  return { videoId: videos[index]?.videoId ?? null };
 }
 
 /** A stable key for the list. Video IDs are unique within a list. */
