@@ -15,9 +15,9 @@ Build progress is tracked in `docs/status.md`. Check it at the start of a sessio
 
 ## Hard constraints
 - Must run in Expo Go: no custom native code, no dev client, no libraries that Expo Go doesn't support. Answering "is Expo enough?" is one of the POC's goals.
-- The only network calls go to YouTube. No backend, analytics, crash reporting or other third-party services.
+- The only network calls go to YouTube, plus the Gemini API for the ⓘ info sheet (spec §5a). No backend, analytics, crash reporting or other third-party services.
 - Play videos only through `react-native-youtube-iframe`. Never hide or cover the player's branding, controls or ads, and never download or cache video files.
-- The API key comes from `EXPO_PUBLIC_YOUTUBE_KEY` in `.env`. Never commit `.env` and never hard-code the key.
+- The API keys come from `EXPO_PUBLIC_YOUTUBE_KEY` and `EXPO_PUBLIC_GEMINI_KEY` in `.env`. Never commit `.env` and never hard-code a key.
 
 ## YouTube Data API
 - `search.list` costs 100 units per call. Call it exactly once per drawn item (20 per fetch) and nowhere else. A full fetch costs about 2,010 units and must stay under 2,100 (spec §5).
@@ -28,6 +28,11 @@ Build progress is tracked in `docs/status.md`. Check it at the start of a sessio
 - `player.embedWidth` and `player.embedHeight` are returned only when the request passes `maxWidth` or `maxHeight`.
 - `contentDetails.duration` is ISO 8601 (e.g. `PT1M5S`). Parse it; don't string-match it.
 - For every fetch, log each rejected video with the rule that rejected it, plus the quota used, in `fetch_log`.
+
+## Gemini API (info sheet, spec §5a)
+- Call Gemini only when the user taps ⓘ, never while scrolling or fetching. Check `video_info` first and show a saved answer without a request; never send two requests for the same video.
+- The model name lives only in `config/gemini.ts`. `services/gemini.ts` is the only file that calls Gemini.
+- Send the request with the `google_search` tool, and count each request in `quota_day.geminiRequests`.
 
 ## Code conventions
 
@@ -45,6 +50,7 @@ Build progress is tracked in `docs/status.md`. Check it at the start of a sessio
 
 **Side effects are isolated:**
 - `services/youtube.ts`: the only file that calls the YouTube Data API, and the only one that counts quota units.
+- `services/gemini.ts`: the only file that calls the Gemini API.
 - `db/`: the only folder that touches expo-sqlite.
 
 **Folder structure:**
@@ -53,7 +59,8 @@ app/          screens (smart)
 components/   presentational components (dumb)
 hooks/        data and state hooks
 lib/          pure logic + tests
-services/     YouTube API client
+services/     YouTube and Gemini API clients
+config/       settings meant to be swapped (the Gemini model)
 db/           SQLite schema and queries
 theme/        colors and spacing from section 11
 scripts/      dev tools, not part of the app (generate_art.py draws the art, icon and splash)

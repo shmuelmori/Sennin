@@ -1,6 +1,6 @@
 # Sennin – POC Specification
 
-Nov 4, 2026 · @shmuel · Updated Nov 8, 2026: topic-based feed (replaces channel sources)
+Nov 4, 2026 · @shmuel · Updated Nov 8, 2026: topic-based feed (replaces channel sources) · Updated Nov 10, 2026: video info sheet (Gemini)
 
 **Project:** Sennin · **Document type:** POC specification · **Platform:** Android
 
@@ -49,6 +49,8 @@ Questions the POC answers:
 | Network | fetch against YouTube Data API v3 |
 | Storage | expo-sqlite |
 | API key | .env file (EXPO\_PUBLIC\_YOUTUBE\_KEY), restricted to YouTube Data API only |
+| Video info | Gemini API (`generateContent` with the `google_search` tool), key in .env (EXPO\_PUBLIC\_GEMINI\_KEY). The model name is set once, in `config/gemini.ts` (`gemini-2.5-flash`). Added 2026-11-10 |
+| Bottom sheet | @gorhom/bottom-sheet (with react-native-reanimated and react-native-gesture-handler, all in Expo Go) |
 
 ## 4. Screens
 
@@ -95,6 +97,7 @@ Questions the POC answers:
 - How many videos were rejected and by which rule. Every rule is listed in the §5 order, including rules that rejected nothing.
 - API units used by the fetch, and units left today.
 - The fetch's error is shown when there is one, and so is whether the API key is loaded.
+- Gemini requests sent today (Pacific Time day), and whether the Gemini key is loaded (2026-11-10).
 
 ## 5. Fetch process
 
@@ -152,7 +155,20 @@ When a fetch fails:
 
 - A key error or `quotaExceeded` stops the fetch, keeps the current list and logs the error.
 - Any other error on one item's search skips that item, and the fetch goes on with the rest. If every item fails, the fetch fails.
+- An info button (ⓘ) in the strip, next to the remove button (2026-11-10). Tapping it pauses the video and opens a bottom sheet: a loading state, then a short Hebrew explanation of the video's topic, written by Gemini from a Google Search. Closing the sheet doesn't resume the video; tapping the video (or swiping to another) does. See §5a.
 - A failed fetch, or one where no video passes the filters, keeps the current list and says so.
+
+## 5a. Video info (Gemini)
+
+Added 2026-11-10.
+
+- Gemini is called only when the user taps ⓘ, never while scrolling or fetching.
+- Before any request, `video_info` is checked. A saved answer is shown at once, without a request. Tapping ⓘ again on the same video never sends a second request, also while the first one is still running.
+- The request sends the video's title, description (cut to 1,000 characters), item name and channel name, with the `google_search` tool on. The instruction: "הסבר בעברית, 150–250 מילים, על הנושא של הסרטון. השתמש רק בעובדות שמצאת בחיפוש. אם אין מידע מספיק, אמור זאת ואל תנחש. אל תציג רשימת מקורות."
+- A successful answer is saved in `video_info` with the model's name. Errors and empty answers are not saved, so the next tap tries again.
+- Messages: no network or a timeout (20 s) → "אין חיבור"; HTTP 429 → "נגמרה המכסה להיום"; a response with no text → "לא נמצא מידע על הנושא". A missing key and other errors get their own short message.
+- Each request is counted in `quota_day.geminiRequests`. Each answer is logged with its time and whether the response had `groundingMetadata`.
+- Free tier: the daily request limit and Grounding with Google Search availability for the model must be checked in AI Studio for the project; Google's published numbers vary by model and change often.
 
 ## 6. Functional requirements
 
@@ -170,16 +186,18 @@ When a fetch fails:
 | F10 | Preload the next video: the neighbors' players are already loaded with their videos (cued, not playing), and the next video starts as soon as the page snap begins after the finger lifts, not when it ends. No hidden or muted playback, to stay within YouTube's policies. Decided on 2026-11-06 | Nice to have |
 | F11 | Status screen | Nice to have |
 | F12 | Daily quota counter; Refresh disabled below 2,100 units left | Must |
+| F13 | Video info sheet (ⓘ): a grounded Gemini explanation of the video's topic, cached in `video_info` (§5a). Added 2026-11-10 | Nice to have |
 
 ## 7. Data model (SQLite)
 
 | Table | Fields |
 | --- | --- |
 | item | id, name, query, removed, removedAt, lastPickedAt, pickCount, createdAt |
-| feed\_item | position, videoId, itemId, itemName, title, durationSec, isReserve, status |
+| feed\_item | position, videoId, itemId, itemName, title, durationSec, isReserve, status, channelTitle, description |
 | watched | videoId (primary key), watchedAt |
 | fetch\_log | startedAt, durationMs, itemsPicked, fetched, passed, rejectedByRule, quotaUsed, error |
-| quota\_day | date, unitsUsed |
+| quota\_day | date, unitsUsed, geminiRequests |
+| video\_info | videoId (primary key), text, model, createdAt |
 
 - The `topic`, `channel` and `channel_topic` tables are dropped. The migration (schema v3) drops them and keeps `watched`. It also rebuilds `feed_item` and `fetch_log`, so the current list and old fetch logs are gone after the upgrade (2026-11-08).
 - `feed_item.itemId` and `itemName` replace `channelId` and `channelTitle`. The name is saved with each video, so the strip still shows it after the item is deleted.
@@ -190,6 +208,7 @@ When a fetch fails:
 - `fetch_log.fetched` is the number of videos `videos.list` returned, which the filters then checked; `passed` is how many passed all rules. `fetch_log.error` names the failure and any skipped items, or is empty.
 - `fetch_log.durationMs` is how long the fetch took, until the new list was saved. Replaces `finishedAt` (2026-11-08).
 - `quota_day.date` is the Pacific Time date (`YYYY-MM-DD`); `unitsUsed` is the units spent that day.
+- Schema v4 (2026-11-10): `feed_item.channelTitle` and `description` are saved by each fetch for the info sheet (videos saved before v4 have them empty). The feed doesn't read them; the info sheet does. `video_info` holds Gemini's saved answers; `quota_day.geminiRequests` counts the day's Gemini requests.
 - Times are stored as milliseconds since 1970, and true/false as 1/0.
 
 ## 8. Non-functional requirements
@@ -197,7 +216,8 @@ When a fetch fails:
 - Switching between videos: under one second in 80% of cases.
 - Opening the app with an existing list: under 2 seconds.
 - Fetching: under 60 seconds and under 2,100 API units.
-- Privacy: no server and no account; only requests to YouTube leave the phone.
+- Privacy: no server and no account; only requests to YouTube and, when the user taps ⓘ, to the Gemini API leave the phone (changed 2026-11-10).
+- The info sheet: the explanation shows in under 8 seconds, and at once from `video_info`. It never slows down switching videos.
 - YouTube policies: official player only, without hiding branding, controls or ads, and without downloading videos.
 
 ## 9. Decisions
@@ -207,6 +227,7 @@ When a fetch fails:
 - Feed (2026-11-06): no tap-to-pause (YouTube's controls do it), no counter, videos loop, and auto-skip only on a player error.
 - Topic-based feed (2026-11-08): channels and the 2 fixed topics (World War II, Claude Code) are replaced by a dynamic item list and `search.list`. The quota budget rises from under 100 to about 2,010 units per fetch.
 - Blocked words are listed in `lib/topics.ts` (agreed 2026-11-06). Matching ignores case and uses whole words. Blocked words use narrow phrases such as "reacts to" instead of plain "reaction", so titles like "chain reaction" aren't blocked.
+- Video info (2026-11-10): an on-demand, grounded Gemini explanation per video, the one exception to "only YouTube" network calls. The sheet covers the paused player while it is open; the player's controls stay untouched and it resumes on tap.
 - React Native with Expo.
 
 ## 10. Risks
