@@ -5,6 +5,8 @@ import {
   describeFailure,
   formatAnswerLine,
   INSTRUCTION,
+  isMostlyHebrew,
+  LANGUAGE_RULE,
   MAX_DESCRIPTION_CHARS,
   readAnswer,
   trimDescription,
@@ -34,16 +36,21 @@ describe('buildPrompt', () => {
   it('starts with the instruction and holds the title, description, topic and channel', () => {
     const prompt = buildPrompt(VIDEO);
     expect(prompt.startsWith(INSTRUCTION)).toBe(true);
-    expect(prompt).toContain('Topic: Octopus');
-    expect(prompt).toContain('Title: How octopuses change color');
-    expect(prompt).toContain('Channel: Sea Facts');
-    expect(prompt).toContain('Description: Chromatophores explained.');
+    expect(prompt).toContain('נושא: Octopus');
+    expect(prompt).toContain('כותרת: How octopuses change color');
+    expect(prompt).toContain('ערוץ: Sea Facts');
+    expect(prompt).toContain('תיאור: Chromatophores explained.');
+  });
+
+  it('ends with the Hebrew-only rule', () => {
+    expect(buildPrompt(VIDEO).endsWith(LANGUAGE_RULE)).toBe(true);
+    expect(LANGUAGE_RULE).toContain('בעברית בלבד');
   });
 
   it('marks a missing description and channel', () => {
     const prompt = buildPrompt({ ...VIDEO, description: ' ', channelTitle: '' });
-    expect(prompt).toContain('Description: (none)');
-    expect(prompt).toContain('Channel: (unknown)');
+    expect(prompt).toContain('תיאור: (אין)');
+    expect(prompt).toContain('ערוץ: (לא ידוע)');
   });
 
   it('asks for Hebrew, 150–250 words, search facts only and no source list', () => {
@@ -57,6 +64,7 @@ describe('buildPrompt', () => {
 describe('buildRequestBody', () => {
   it('sends one user message with the google_search tool', () => {
     const body = buildRequestBody(VIDEO);
+    expect(body.systemInstruction).toEqual({ parts: [{ text: LANGUAGE_RULE }] });
     expect(body.tools).toEqual([{ google_search: {} }]);
     expect(body.contents).toEqual([{ role: 'user', parts: [{ text: buildPrompt(VIDEO) }] }]);
   });
@@ -102,6 +110,24 @@ describe('readAnswer', () => {
     ['blank text', { candidates: [{ content: { parts: [{ text: '  \n' }] } }] }],
   ])('returns null for %s', (_name, response) => {
     expect(readAnswer(response)).toBeNull();
+  });
+});
+
+describe('isMostlyHebrew', () => {
+  it('accepts Hebrew text with English terms in it', () => {
+    expect(isMostlyHebrew('התמנון (Octopus) משנה את צבעו בעזרת תאים בשם כרומטופורים.')).toBe(true);
+  });
+
+  it('rejects English text', () => {
+    expect(isMostlyHebrew('The octopus changes color using chromatophores.')).toBe(false);
+  });
+
+  it('rejects text that is mostly English with a little Hebrew', () => {
+    expect(isMostlyHebrew('שלום. The octopus changes color using chromatophores.')).toBe(false);
+  });
+
+  it('rejects text with no letters', () => {
+    expect(isMostlyHebrew('123 …')).toBe(false);
   });
 });
 

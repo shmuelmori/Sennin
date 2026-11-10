@@ -165,6 +165,7 @@ Added 2026-11-10.
 - Gemini is called only when the user taps ⓘ, never while scrolling or fetching.
 - Before any request, `video_info` is checked. A saved answer is shown at once, without a request. Tapping ⓘ again on the same video never sends a second request, also while the first one is still running.
 - The request sends the video's title, description (cut to 1,000 characters), item name and channel name, with the `google_search` tool on. The instruction: "הסבר בעברית, 150–250 מילים, על הנושא של הסרטון. השתמש רק בעובדות שמצאת בחיפוש. אם אין מידע מספיק, אמור זאת ואל תנחש. אל תציג רשימת מקורות."
+- The content is Hebrew (2026-11-10): the video details are sent under Hebrew labels, and a rule "write the whole answer in Hebrew only, even when the video details and search results are in English" is set as the system instruction and repeated at the end of the prompt. An answer where under 60% of the letters are Hebrew is shown but not saved, and a saved one like that is asked again.
 - A successful answer is saved in `video_info` with the model's name. Errors and empty answers are not saved, so the next tap tries again.
 - Messages: no network or a timeout (20 s) → "אין חיבור"; HTTP 429 → "נגמרה המכסה להיום"; a response with no text → "לא נמצא מידע על הנושא". A missing key and other errors get their own short message.
 - Each request is counted in `quota_day.geminiRequests`. Each answer is logged with its time and whether the response had `groundingMetadata`.

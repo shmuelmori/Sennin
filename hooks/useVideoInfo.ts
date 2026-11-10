@@ -5,13 +5,15 @@ import { useDatabase } from '@/db/DatabaseProvider';
 import { addGeminiRequest } from '@/db/quota';
 import { getVideoContext, getVideoInfo, saveVideoInfo } from '@/db/videoInfo';
 import { pacificDate } from '@/lib/quota';
-import { describeFailure, formatAnswerLine } from '@/lib/videoInfo';
+import { describeFailure, formatAnswerLine, isMostlyHebrew } from '@/lib/videoInfo';
 import { explainVideo } from '@/services/gemini';
 
 // The info sheet's data (ⓘ in the feed strip). Gemini is asked only from
 // `open`, i.e. only on a tap. A saved answer in video_info is shown at once,
 // with no request. While a request for a video is running, opening it again
-// waits for the same request instead of sending another. Logs [gemini] lines.
+// waits for the same request instead of sending another. The content must be
+// Hebrew: an answer that isn't is shown but not saved, and a saved one that
+// isn't (from before the Hebrew check) is asked again. Logs [gemini] lines.
 
 export type VideoInfoState =
   | { kind: 'closed' }
@@ -36,7 +38,9 @@ export function useVideoInfo() {
     async (videoId: string): Promise<Outcome> => {
       const startedAt = Date.now();
       const saved = await getVideoInfo(db, videoId);
-      if (saved !== null) {
+      if (saved !== null && !isMostlyHebrew(saved.text)) {
+        log(`${videoId}: saved answer isn't Hebrew, asking again`);
+      } else if (saved !== null) {
         log(`${videoId}: from video_info (${saved.model}), no request`);
         return { ok: true, text: saved.text };
       }
@@ -55,6 +59,10 @@ export function useVideoInfo() {
         return { ok: false, message: describeFailure(result.error.kind) };
       }
       log(formatAnswerLine(videoId, result.answer, Date.now() - startedAt));
+      if (!isMostlyHebrew(result.answer.text)) {
+        log(`${videoId}: answer isn't Hebrew, shown but not saved`);
+        return { ok: true, text: result.answer.text };
+      }
       await saveVideoInfo(db, {
         videoId,
         text: result.answer.text,
