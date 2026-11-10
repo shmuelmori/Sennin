@@ -25,7 +25,15 @@ function video(videoId: string): NewFeedItem {
     itemName: 'חורים שחורים',
     title: `Video ${videoId}`,
     durationSec: 59,
+    channelTitle: 'ערוץ',
+    description: `About ${videoId}`,
   };
+}
+
+/** The fields getFeedItems reads back: everything but the channel and description. */
+function listed(videoId: string) {
+  const { channelTitle: _channel, description: _description, ...rest } = video(videoId);
+  return rest;
 }
 
 describe('replaceFeed and getFeedItems', () => {
@@ -36,9 +44,9 @@ describe('replaceFeed and getFeedItems', () => {
   it('saves the feed first, then the reserve, all unseen', async () => {
     await replaceFeed(db, [video('a'), video('b')], [video('c')]);
     expect(await getFeedItems(db)).toEqual([
-      { ...video('a'), position: 0, isReserve: false, status: 'unseen' },
-      { ...video('b'), position: 1, isReserve: false, status: 'unseen' },
-      { ...video('c'), position: 2, isReserve: true, status: 'unseen' },
+      { ...listed('a'), position: 0, isReserve: false, status: 'unseen' },
+      { ...listed('b'), position: 1, isReserve: false, status: 'unseen' },
+      { ...listed('c'), position: 2, isReserve: true, status: 'unseen' },
     ]);
   });
 
@@ -47,7 +55,7 @@ describe('replaceFeed and getFeedItems', () => {
     await setFeedItemStatus(db, 'a', 'watched');
     await replaceFeed(db, [video('d')], []);
     expect(await getFeedItems(db)).toEqual([
-      { ...video('d'), position: 0, isReserve: false, status: 'unseen' },
+      { ...listed('d'), position: 0, isReserve: false, status: 'unseen' },
     ]);
   });
 

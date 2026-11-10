@@ -239,13 +239,16 @@ describe('failedBeforeStart', () => {
 });
 
 describe('toNewFeedItem', () => {
-  it('keeps the item id and name with the video', () => {
-    expect(toNewFeedItem(short('x', 'octopus'), { id: 4, name: 'Octopus' })).toEqual({
+  it('keeps the item id and name, the channel and the description with the video', () => {
+    const video = short('x', 'octopus', { description: 'Eight arms.' });
+    expect(toNewFeedItem(video, { id: 4, name: 'Octopus' })).toEqual({
       videoId: 'x',
       itemId: 4,
       itemName: 'Octopus',
       title: 'All about the octopus',
       durationSec: 45,
+      channelTitle: 'Channel',
+      description: 'Eight arms.',
     });
   });
 });

@@ -39,11 +39,11 @@ async function makeV2Database(): Promise<void> {
 }
 
 describe('initDatabase', () => {
-  it('creates the five tables from spec §7 and seeds the items', async () => {
+  it('creates the six tables from spec §7 and seeds the items', async () => {
     await initDatabase(db);
     expect(await readDatabaseSummary(db)).toEqual({
       schemaVersion: SCHEMA_VERSION,
-      tables: ['feed_item', 'fetch_log', 'item', 'quota_day', 'watched'],
+      tables: ['feed_item', 'fetch_log', 'item', 'quota_day', 'video_info', 'watched'],
       itemCount: SEED_ITEMS.length,
     });
   });
@@ -71,12 +71,43 @@ describe('initDatabase', () => {
     await makeV2Database();
     await initDatabase(db);
     const summary = await readDatabaseSummary(db);
-    expect(summary.schemaVersion).toBe(3);
-    expect(summary.tables).toEqual(['feed_item', 'fetch_log', 'item', 'quota_day', 'watched']);
+    expect(summary.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(summary.tables).toEqual([
+      'feed_item',
+      'fetch_log',
+      'item',
+      'quota_day',
+      'video_info',
+      'watched',
+    ]);
     expect(summary.itemCount).toBe(SEED_ITEMS.length);
     expect(await db.getAllAsync('SELECT videoId FROM watched')).toEqual([{ videoId: 'seen' }]);
     expect(await db.getAllAsync('SELECT videoId FROM feed_item')).toEqual([]);
     expect(await db.getAllAsync('SELECT id FROM fetch_log')).toEqual([]);
+  });
+
+  it('upgrades a v3 database: keeps the list and the quota, with an empty channel and description', async () => {
+    await initDatabase(db);
+    // Back to v3 by hand: the v4 columns and table removed.
+    await db.execAsync(`
+      DROP TABLE video_info;
+      ALTER TABLE feed_item DROP COLUMN channelTitle;
+      ALTER TABLE feed_item DROP COLUMN description;
+      ALTER TABLE quota_day DROP COLUMN geminiRequests;
+      INSERT INTO feed_item (position, videoId, itemId, itemName, title, durationSec, isReserve)
+        VALUES (0, 'v', 1, 'Octopus', 'Title', 60, 0);
+      INSERT INTO quota_day (date, unitsUsed) VALUES ('2026-11-10', 2010);
+      PRAGMA user_version = 3;
+    `);
+    await initDatabase(db);
+    expect((await readDatabaseSummary(db)).schemaVersion).toBe(4);
+    expect(await db.getAllAsync('SELECT videoId, channelTitle, description FROM feed_item')).toEqual([
+      { videoId: 'v', channelTitle: '', description: '' },
+    ]);
+    expect(await db.getAllAsync('SELECT unitsUsed, geminiRequests FROM quota_day')).toEqual([
+      { unitsUsed: 2010, geminiRequests: 0 },
+    ]);
+    expect(await db.getAllAsync('SELECT videoId FROM video_info')).toEqual([]);
   });
 
   it('refuses a database from a newer app version', async () => {

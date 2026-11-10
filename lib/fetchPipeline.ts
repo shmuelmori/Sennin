@@ -104,6 +104,8 @@ export function toNewFeedItem(video: FetchedVideo, item: Pick<Item, 'id' | 'name
     itemName: item.name,
     title: video.title,
     durationSec: video.durationSec ?? 0,
+    channelTitle: video.channelTitle,
+    description: video.description,
   };
 }
 

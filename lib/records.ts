@@ -30,9 +30,17 @@ export type NewFeedItem = {
   itemName: string;
   title: string;
   durationSec: number;
+  /** Saved for the info sheet (ⓘ), which sends them to Gemini. */
+  channelTitle: string;
+  description: string;
 };
 
-export type FeedItem = NewFeedItem & {
+/**
+ * A saved video as the feed reads it. The channel and description stay in
+ * the DB until the info sheet asks for them (db/videoInfo.ts), so reading
+ * the list stays light.
+ */
+export type FeedItem = Omit<NewFeedItem, 'channelTitle' | 'description'> & {
   /** Order in the list, from 0. The feed comes first, then the reserve. */
   position: number;
   isReserve: boolean;

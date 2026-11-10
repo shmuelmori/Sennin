@@ -14,7 +14,7 @@ import { FEED_STATUSES } from '@/lib/records';
 import { seedItems } from './seed';
 
 /** Bump this and add a step to migrateDatabase when the schema changes. */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 const statusList = FEED_STATUSES.map((status) => `'${status}'`).join(', ');
 
@@ -130,6 +130,24 @@ CREATE TABLE quota_day (
 );
 `;
 
+// v4 (2026-11-10): the video info sheet (ⓘ). feed_item keeps each video's
+// channel and description to send to Gemini; video_info caches Gemini's
+// answers; quota_day also counts the day's Gemini requests. Videos saved
+// before v4 get an empty channel and description.
+const ADD_VIDEO_INFO_V4 = `
+ALTER TABLE feed_item ADD COLUMN channelTitle TEXT NOT NULL DEFAULT '';
+ALTER TABLE feed_item ADD COLUMN description TEXT NOT NULL DEFAULT '';
+ALTER TABLE quota_day ADD COLUMN geminiRequests INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE video_info (
+  videoId TEXT PRIMARY KEY NOT NULL,
+  text TEXT NOT NULL,
+  -- The Gemini model that wrote it, from config/gemini.ts
+  model TEXT NOT NULL,
+  createdAt INTEGER NOT NULL
+);
+`;
+
 async function readSchemaVersion(db: SQLiteDatabase): Promise<number> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   return row?.user_version ?? 0;
@@ -158,6 +176,12 @@ async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
       // The seed runs here, once: the step never runs again on this database.
       await seedItems(db, Date.now());
       await db.execAsync('PRAGMA user_version = 3');
+    });
+  }
+  if (version < 4) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(ADD_VIDEO_INFO_V4);
+      await db.execAsync('PRAGMA user_version = 4');
     });
   }
 }

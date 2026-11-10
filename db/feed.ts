@@ -49,8 +49,9 @@ export async function replaceFeed(
     for (const [position, { item, isReserve }] of items.entries()) {
       await db.runAsync(
         `INSERT INTO feed_item
-           (position, videoId, itemId, itemName, title, durationSec, isReserve, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'unseen')`,
+           (position, videoId, itemId, itemName, title, durationSec, isReserve, status,
+            channelTitle, description)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'unseen', ?, ?)`,
         [
           position,
           item.videoId,
@@ -59,6 +60,8 @@ export async function replaceFeed(
           item.title,
           item.durationSec,
           isReserve,
+          item.channelTitle,
+          item.description,
         ],
       );
     }
