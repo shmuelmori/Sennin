@@ -3,7 +3,7 @@
 // prompt and the response reading are pure functions in lib/videoInfo.ts.
 
 import { GEMINI_MODEL, GEMINI_TIMEOUT_MS } from '@/config/gemini';
-import { checkApiKey, type ApiKeyCheck } from '@/lib/apiKey';
+import { checkGeminiKey, type ApiKeyCheck } from '@/lib/apiKey';
 import {
   buildRequestBody,
   classifyStatus,
@@ -20,7 +20,7 @@ export type GeminiResult = { ok: true; answer: GeminiAnswer } | { ok: false; err
 
 // Expo inlines EXPO_PUBLIC_* variables only for a direct `process.env.NAME` read.
 export function readGeminiKey(): ApiKeyCheck {
-  return checkApiKey(process.env.EXPO_PUBLIC_GEMINI_KEY);
+  return checkGeminiKey(process.env.EXPO_PUBLIC_GEMINI_KEY);
 }
 
 function parseJson(text: string): unknown {
