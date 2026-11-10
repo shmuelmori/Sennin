@@ -10,6 +10,7 @@ type Props = {
   item: FeedItem;
   removable: boolean;
   onRemoveItem: (item: FeedItem) => void;
+  onInfo: (item: FeedItem) => void;
   pageSize: Size;
   layout: FeedPageLayout;
 };
@@ -21,6 +22,7 @@ export const ShortPage = memo(function ShortPage({
   item,
   removable,
   onRemoveItem,
+  onInfo,
   pageSize,
   layout,
 }: Props) {
@@ -32,6 +34,7 @@ export const ShortPage = memo(function ShortPage({
         height={layout.infoHeight}
         removable={removable}
         onRemove={() => onRemoveItem(item)}
+        onInfo={() => onInfo(item)}
       />
     </View>
   );

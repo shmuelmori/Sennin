@@ -4,12 +4,14 @@ import { type LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FeedPager } from '@/components/FeedPager';
+import { InfoSheet, type InfoSheetContent } from '@/components/InfoSheet';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenPlaceholder } from '@/components/ScreenPlaceholder';
 import { UndoToast } from '@/components/UndoToast';
 import { useFeed } from '@/hooks/useFeed';
 import { useItemRemoval } from '@/hooks/useItemRemoval';
 import { useSwitchTimer } from '@/hooks/useSwitchTimer';
+import { useVideoInfo, type VideoInfoState } from '@/hooks/useVideoInfo';
 import { toFeedPages } from '@/lib/feedPages';
 import { feedPageLayout, type Size } from '@/lib/feedPaging';
 import type { FeedItem } from '@/lib/records';
@@ -18,13 +20,28 @@ import { colors, sizes, spacing } from '@/theme';
 /** The page on screen, tied to the list it belongs to. */
 type Position = { version: number; index: number };
 
+function sheetContent(info: VideoInfoState): InfoSheetContent | null {
+  switch (info.kind) {
+    case 'closed':
+      return null;
+    case 'loading':
+      return { kind: 'loading' };
+    case 'ready':
+      return { kind: 'ready', text: info.text };
+    case 'failed':
+      return { kind: 'failed', message: info.message };
+  }
+}
+
 // Feed screen (spec §4, steps 7.1 to 7.5): the saved list from feed_item as
 // a vertical paging feed, opening on the first unwatched video. A video that
 // can't play is replaced from the reserve (F8), and one that has played for
 // half its length is saved as watched (F9). The strip's remove button takes
 // the video's item out of later fetches, with "Undo" for 5 seconds (F3). A
 // Refresh on the Refresh tab saves a new list, and the feed starts over at
-// its first video. Nothing plays while another tab is open.
+// its first video. Nothing plays while another tab is open. The strip's ⓘ
+// button pauses the video and opens a sheet that explains its topic (Gemini,
+// only on that tap). Closing the sheet doesn't resume: tapping the video does.
 export default function FeedScreen() {
   const router = useRouter();
   const focused = useIsFocused();
@@ -36,10 +53,29 @@ export default function FeedScreen() {
   // Stable, so the memoized pages don't all re-render on every swipe.
   const onRemoveItem = useCallback((item: FeedItem) => void removeItem(item), [removeItem]);
   const { onPlaying } = switchTimer;
+  const videoInfo = useVideoInfo();
+  const { open: openInfo } = videoInfo;
+  // The video the ⓘ button paused. It stays paused (the sheet closing
+  // doesn't resume it) until the user plays it or swipes to another video.
+  const [pausedVideoId, setPausedVideoId] = useState<string | null>(null);
+  const [infoHeading, setInfoHeading] = useState('');
+
+  const onInfo = useCallback(
+    (item: FeedItem) => {
+      setPausedVideoId(item.videoId);
+      setInfoHeading(item.itemName);
+      openInfo(item.videoId);
+    },
+    [openInfo],
+  );
 
   const onPlayerStateChange = useCallback(
     (videoId: string, playing: boolean) => {
-      if (playing) onPlaying(videoId);
+      if (playing) {
+        onPlaying(videoId);
+        // The user tapped the paused video, so it's no longer held paused.
+        setPausedVideoId((paused) => (paused === videoId ? null : paused));
+      }
       onPlaybackChange(videoId, playing);
     },
     [onPlaying, onPlaybackChange],
@@ -90,6 +126,7 @@ export default function FeedScreen() {
     const onPageChange = (index: number) => {
       const page = pages[index];
       if (page?.kind === 'video') switchTimer.onSwitch(page.item.videoId);
+      setPausedVideoId(null);
       setPosition({ version: state.version, index });
     };
     body = (
@@ -107,6 +144,8 @@ export default function FeedScreen() {
         onPlaybackChange={onPlayerStateChange}
         removedIds={removedIds}
         onRemoveItem={onRemoveItem}
+        onInfo={onInfo}
+        pausedVideoId={pausedVideoId}
       />
     );
   }
@@ -123,6 +162,11 @@ export default function FeedScreen() {
             height={layout.infoHeight}
           />
         )}
+        <InfoSheet
+          content={sheetContent(videoInfo.state)}
+          heading={infoHeading}
+          onClose={videoInfo.close}
+        />
       </View>
     </SafeAreaView>
   );
