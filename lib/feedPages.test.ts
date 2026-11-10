@@ -1,4 +1,10 @@
-import { feedPageKey, feedVideos, startPageIndex, toFeedPages } from './feedPages';
+import {
+  feedPageKey,
+  feedVideos,
+  positionOfPage,
+  startPageIndex,
+  toFeedPages,
+} from './feedPages';
 import type { FeedItem, FeedStatus } from './records';
 
 function item(
@@ -74,6 +80,36 @@ describe('startPageIndex', () => {
 
   it('starts at the end page for no videos', () => {
     expect(startPageIndex([])).toBe(0);
+  });
+
+  it('reopens on the saved video, even past unwatched ones', () => {
+    const videos = [item(0), item(1), item(2), item(3)];
+    expect(startPageIndex(videos, { videoId: videos[2].videoId })).toBe(2);
+  });
+
+  it('reopens on the saved video even if it was watched', () => {
+    const videos = [item(0), item(1, { status: 'watched' }), item(2)];
+    expect(startPageIndex(videos, { videoId: videos[1].videoId })).toBe(1);
+  });
+
+  it('reopens on the end page when that was saved', () => {
+    expect(startPageIndex([item(0), item(1)], { videoId: null })).toBe(2);
+  });
+
+  it('falls back to the first unwatched video when the saved one is gone', () => {
+    const videos = [item(0, { status: 'watched' }), item(1)];
+    expect(startPageIndex(videos, { videoId: 'missing' })).toBe(1);
+  });
+});
+
+describe('positionOfPage', () => {
+  it("saves a video page as its video's ID", () => {
+    const videos = [item(0), item(1)];
+    expect(positionOfPage(videos, 1)).toEqual({ videoId: videos[1].videoId });
+  });
+
+  it('saves the end page as null', () => {
+    expect(positionOfPage([item(0), item(1)], 2)).toEqual({ videoId: null });
   });
 });
 

@@ -43,7 +43,15 @@ describe('initDatabase', () => {
     await initDatabase(db);
     expect(await readDatabaseSummary(db)).toEqual({
       schemaVersion: SCHEMA_VERSION,
-      tables: ['feed_item', 'fetch_log', 'item', 'quota_day', 'video_info', 'watched'],
+      tables: [
+        'feed_item',
+        'feed_position',
+        'fetch_log',
+        'item',
+        'quota_day',
+        'video_info',
+        'watched',
+      ],
       itemCount: SEED_ITEMS.length,
     });
   });
@@ -74,6 +82,7 @@ describe('initDatabase', () => {
     expect(summary.schemaVersion).toBe(SCHEMA_VERSION);
     expect(summary.tables).toEqual([
       'feed_item',
+      'feed_position',
       'fetch_log',
       'item',
       'quota_day',
@@ -86,9 +95,31 @@ describe('initDatabase', () => {
     expect(await db.getAllAsync('SELECT id FROM fetch_log')).toEqual([]);
   });
 
-  it('upgrades a v3 database: keeps the list and the quota, with an empty channel and description', async () => {
+  it('upgrades a v3 database: adds feed_position and keeps the list', async () => {
     await initDatabase(db);
-    // Back to v3 by hand: the v4 columns and table removed.
+    // Back to v3 by hand: the v4 and v5 tables and columns removed.
+    await db.execAsync(`
+      DROP TABLE feed_position;
+      DROP TABLE video_info;
+      ALTER TABLE feed_item DROP COLUMN channelTitle;
+      ALTER TABLE feed_item DROP COLUMN description;
+      ALTER TABLE quota_day DROP COLUMN geminiRequests;
+      PRAGMA user_version = 3;
+    `);
+    await db.runAsync(
+      `INSERT INTO feed_item
+         (position, videoId, itemId, itemName, title, durationSec, isReserve, status)
+       VALUES (0, 'a', 1, 'Octopus', 'Title', 60, 0, 'unseen')`,
+    );
+    await initDatabase(db);
+    expect((await readDatabaseSummary(db)).schemaVersion).toBe(SCHEMA_VERSION);
+    expect(await db.getAllAsync('SELECT videoId FROM feed_item')).toEqual([{ videoId: 'a' }]);
+    expect(await db.getAllAsync('SELECT * FROM feed_position')).toEqual([]);
+  });
+
+  it('upgrades a v4 database: keeps the list and the quota, with an empty channel and description', async () => {
+    await initDatabase(db);
+    // Back to v4 by hand: the v5 columns and table removed.
     await db.execAsync(`
       DROP TABLE video_info;
       ALTER TABLE feed_item DROP COLUMN channelTitle;
@@ -97,10 +128,10 @@ describe('initDatabase', () => {
       INSERT INTO feed_item (position, videoId, itemId, itemName, title, durationSec, isReserve)
         VALUES (0, 'v', 1, 'Octopus', 'Title', 60, 0);
       INSERT INTO quota_day (date, unitsUsed) VALUES ('2026-11-10', 2010);
-      PRAGMA user_version = 3;
+      PRAGMA user_version = 4;
     `);
     await initDatabase(db);
-    expect((await readDatabaseSummary(db)).schemaVersion).toBe(4);
+    expect((await readDatabaseSummary(db)).schemaVersion).toBe(SCHEMA_VERSION);
     expect(await db.getAllAsync('SELECT videoId, channelTitle, description FROM feed_item')).toEqual([
       { videoId: 'v', channelTitle: '', description: '' },
     ]);

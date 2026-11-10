@@ -14,7 +14,7 @@ import { FEED_STATUSES } from '@/lib/records';
 import { seedItems } from './seed';
 
 /** Bump this and add a step to migrateDatabase when the schema changes. */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 const statusList = FEED_STATUSES.map((status) => `'${status}'`).join(', ');
 
@@ -130,11 +130,21 @@ CREATE TABLE quota_day (
 );
 `;
 
-// v4 (2026-11-10): the video info sheet (ⓘ). feed_item keeps each video's
+// v4 (2026-11-09): the page the Feed was last on, so coming back to the app
+// opens on the same video (spec §4 "Feed"). One row at most; a NULL videoId
+// is the end page.
+const CREATE_FEED_POSITION_V4 = `
+CREATE TABLE feed_position (
+  id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
+  videoId TEXT
+);
+`;
+
+// v5 (2026-11-10): the video info sheet (ⓘ). feed_item keeps each video's
 // channel and description to send to Gemini; video_info caches Gemini's
 // answers; quota_day also counts the day's Gemini requests. Videos saved
-// before v4 get an empty channel and description.
-const ADD_VIDEO_INFO_V4 = `
+// before v5 get an empty channel and description.
+const ADD_VIDEO_INFO_V5 = `
 ALTER TABLE feed_item ADD COLUMN channelTitle TEXT NOT NULL DEFAULT '';
 ALTER TABLE feed_item ADD COLUMN description TEXT NOT NULL DEFAULT '';
 ALTER TABLE quota_day ADD COLUMN geminiRequests INTEGER NOT NULL DEFAULT 0;
@@ -180,8 +190,14 @@ async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   }
   if (version < 4) {
     await db.withTransactionAsync(async () => {
-      await db.execAsync(ADD_VIDEO_INFO_V4);
+      await db.execAsync(CREATE_FEED_POSITION_V4);
       await db.execAsync('PRAGMA user_version = 4');
+    });
+  }
+  if (version < 5) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(ADD_VIDEO_INFO_V5);
+      await db.execAsync('PRAGMA user_version = 5');
     });
   }
 }
