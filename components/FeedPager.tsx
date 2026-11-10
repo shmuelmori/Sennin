@@ -37,6 +37,10 @@ type Props = {
   /** Removed items: their videos show no remove button. */
   removedIds: ReadonlySet<number>;
   onRemoveItem: (item: FeedItem) => void;
+  /** The ⓘ button in a strip. */
+  onInfo: (item: FeedItem) => void;
+  /** The current video, paused by the ⓘ button, plays only when the user taps it. */
+  pausedVideoId: string | null;
 };
 
 // The vertical paging feed (§3, §4, F7): one video per page, then the
@@ -59,6 +63,8 @@ export function FeedPager({
   onPlaybackChange,
   removedIds,
   onRemoveItem,
+  onInfo,
+  pausedVideoId,
 }: Props) {
   const scrollRef = useRef<ScrollViewInstance>(null);
   const openedAtStart = useRef(false);
@@ -122,6 +128,7 @@ export function FeedPager({
             item={page.item}
             removable={!removedIds.has(page.item.itemId)}
             onRemoveItem={onRemoveItem}
+            onInfo={onInfo}
             pageSize={pageSize}
             layout={layout}
           />
@@ -145,7 +152,7 @@ export function FeedPager({
             size={layout.player}
             top={pageIndex * pageSize.height + layout.playerTop}
             left={playerLeft}
-            playing={active && pageIndex === currentIndex}
+            playing={active && pageIndex === currentIndex && page.item.videoId !== pausedVideoId}
             onPlayerError={onPlayerError}
             onPlaybackChange={onPlaybackChange}
           />

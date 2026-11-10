@@ -39,7 +39,15 @@ describe('markWatched and getWatchedIds', () => {
 });
 
 function video(videoId: string): NewFeedItem {
-  return { videoId, itemId: 1, itemName: 'Octopus', title: videoId, durationSec: 60 };
+  return {
+    videoId,
+    itemId: 1,
+    itemName: 'Octopus',
+    title: videoId,
+    durationSec: 60,
+    channelTitle: '',
+    description: '',
+  };
 }
 
 async function statuses(): Promise<Record<string, string>> {

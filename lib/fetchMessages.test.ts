@@ -24,6 +24,8 @@ function videos(count: number): NewFeedItem[] {
     itemName: 'Octopus',
     title: `Video ${i}`,
     durationSec: 30,
+    channelTitle: 'Channel',
+    description: '',
   }));
 }
 

@@ -38,7 +38,17 @@ describe('getFeedPosition and saveFeedPosition', () => {
     await saveFeedPosition(db, 'a');
     await replaceFeed(
       db,
-      [{ videoId: 'x', itemId: 1, itemName: 'Octopus', title: 'X', durationSec: 30 }],
+      [
+        {
+          videoId: 'x',
+          itemId: 1,
+          itemName: 'Octopus',
+          title: 'X',
+          durationSec: 30,
+          channelTitle: '',
+          description: '',
+        },
+      ],
       [],
     );
     expect(await getFeedPosition(db)).toBeNull();

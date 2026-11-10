@@ -10,9 +10,10 @@ import { colors, spacing } from '@/theme';
 // Expo Router requires a default export for route files.
 // Status screen (spec §4, F11): the last fetch's time, duration, videos
 // fetched, rejections per rule and API units used, read from fetch_log, plus
-// whether the YouTube API key is loaded.
+// whether the YouTube and Gemini API keys are loaded, and today's Gemini
+// requests (the ⓘ sheet).
 export default function StatusScreen() {
-  const { state, apiKey } = useStatus();
+  const { state, apiKey, geminiKey, geminiRequestsToday } = useStatus();
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -20,6 +21,15 @@ export default function StatusScreen() {
         <FetchReport state={state} emptyText="No fetch yet. Open Refresh to build a list." />
         <Divider />
         <StatusRows heading="YouTube API key" rows={[{ label: 'Key', value: apiKey }]} />
+        <Divider />
+        <StatusRows
+          heading="Gemini"
+          note="Requests reset at midnight Pacific time."
+          rows={[
+            { label: 'Requests today', value: geminiRequestsToday?.toString() ?? '–' },
+            { label: 'Key', value: geminiKey },
+          ]}
+        />
       </ScrollView>
     </SafeAreaView>
   );

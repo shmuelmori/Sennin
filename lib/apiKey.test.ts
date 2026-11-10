@@ -1,7 +1,8 @@
-import { checkApiKey } from './apiKey';
+import { checkApiKey, checkGeminiKey } from './apiKey';
 
 // Built at runtime so secret scanners don't flag a key-shaped literal.
 const FAKE_KEY = 'AIza' + 'x'.repeat(35);
+const FAKE_AI_STUDIO_KEY = 'AQ.' + 'Ab1-_'.repeat(10);
 
 describe('checkApiKey', () => {
   it('accepts a well-formed key', () => {
@@ -30,5 +31,42 @@ describe('checkApiKey', () => {
     ['placeholder text', 'your-key-here'],
   ])('reports %s as malformed', (_label, raw) => {
     expect(checkApiKey(raw)).toEqual({ ok: false, reason: 'malformed' });
+  });
+
+  it('rejects an "AQ." AI Studio key, which YouTube does not use', () => {
+    expect(checkApiKey(FAKE_AI_STUDIO_KEY)).toEqual({ ok: false, reason: 'malformed' });
+  });
+});
+
+describe('checkGeminiKey', () => {
+  it('accepts a classic "AIza" key', () => {
+    expect(checkGeminiKey(FAKE_KEY)).toEqual({ ok: true, key: FAKE_KEY });
+  });
+
+  it('accepts an "AQ." AI Studio key', () => {
+    expect(checkGeminiKey(FAKE_AI_STUDIO_KEY)).toEqual({ ok: true, key: FAKE_AI_STUDIO_KEY });
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(checkGeminiKey(`  ${FAKE_AI_STUDIO_KEY}\r\n`)).toEqual({
+      ok: true,
+      key: FAKE_AI_STUDIO_KEY,
+    });
+  });
+
+  it.each([undefined, '', '   '])('reports %p as missing', (raw) => {
+    expect(checkGeminiKey(raw)).toEqual({ ok: false, reason: 'missing' });
+  });
+
+  it.each([
+    ['a lowercase prefix', 'aq.' + 'x'.repeat(50)],
+    ['a missing dot', 'AQ' + 'x'.repeat(50)],
+    ['a key that is too short', 'AQ.' + 'x'.repeat(19)],
+    ['quotes left in the value', `"${FAKE_AI_STUDIO_KEY}"`],
+    ['a space inside the key', 'AQ.' + 'x'.repeat(20) + ' ' + 'x'.repeat(20)],
+    ['a second dot', 'AQ.' + 'x'.repeat(20) + '.' + 'x'.repeat(20)],
+    ['placeholder text', 'your-key-here'],
+  ])('reports %s as malformed', (_label, raw) => {
+    expect(checkGeminiKey(raw)).toEqual({ ok: false, reason: 'malformed' });
   });
 });
