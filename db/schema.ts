@@ -14,7 +14,7 @@ import { FEED_STATUSES } from '@/lib/records';
 import { seedItems } from './seed';
 
 /** Bump this and add a step to migrateDatabase when the schema changes. */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 const statusList = FEED_STATUSES.map((status) => `'${status}'`).join(', ');
 
@@ -130,6 +130,16 @@ CREATE TABLE quota_day (
 );
 `;
 
+// v4 (2026-11-09): the page the Feed was last on, so coming back to the app
+// opens on the same video (spec §4 "Feed"). One row at most; a NULL videoId
+// is the end page.
+const CREATE_FEED_POSITION_V4 = `
+CREATE TABLE feed_position (
+  id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
+  videoId TEXT
+);
+`;
+
 async function readSchemaVersion(db: SQLiteDatabase): Promise<number> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   return row?.user_version ?? 0;
@@ -158,6 +168,12 @@ async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
       // The seed runs here, once: the step never runs again on this database.
       await seedItems(db, Date.now());
       await db.execAsync('PRAGMA user_version = 3');
+    });
+  }
+  if (version < 4) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(CREATE_FEED_POSITION_V4);
+      await db.execAsync('PRAGMA user_version = 4');
     });
   }
 }

@@ -3,16 +3,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useDatabase } from '@/db/DatabaseProvider';
 import { getFeedItems, skipFeedItem } from '@/db/feed';
+import { getFeedPosition, saveFeedPosition } from '@/db/feedPosition';
 import { recordWatched } from '@/db/watched';
 import { useFeedListSignal } from '@/hooks/FeedListSignal';
 import { useWatchProgress } from '@/hooks/useWatchProgress';
 import { applySkip, formatSkipLine, isSkipError, planSkip } from '@/lib/autoSkip';
-import { feedVideos, startPageIndex } from '@/lib/feedPages';
+import { feedVideos, positionOfPage, startPageIndex } from '@/lib/feedPages';
 import type { FeedItem } from '@/lib/records';
 import { formatWatchedLine, markItemWatched } from '@/lib/watchProgress';
 
 // The saved list for the Feed screen (steps 7.1, 7.3 and 7.4): reads
-// feed_item, picks the page to open on, replaces a video that can't play with
+// feed_item, picks the page to open on (the page it was last on, saved in
+// feed_position, so leaving the app doesn't lose the place), replaces a video that can't play with
 // one from the reserve (F8), and saves a video as watched once half of it has
 // played (F9). Reads the list again when a Refresh on the Refresh tab saves
 // a new one. Logs [feed], [skip] and [watched] lines.
@@ -46,7 +48,7 @@ async function readFeed(db: SQLiteDatabase): Promise<Read> {
   try {
     const items = await getFeedItems(db);
     const videos = feedVideos(items);
-    const startIndex = startPageIndex(videos);
+    const startIndex = startPageIndex(videos, await getFeedPosition(db));
     const where = startIndex < videos.length ? `video ${startIndex + 1}` : 'the end page';
     log(`list read: ${videos.length} videos, opening on ${where} (${Date.now() - startedAt} ms)`);
     return { items, videos, startIndex };
@@ -54,6 +56,12 @@ async function readFeed(db: SQLiteDatabase): Promise<Read> {
     log(`reading the list failed: ${String(cause)}`);
     return null;
   }
+}
+
+function savePosition(db: SQLiteDatabase, videoId: string | null) {
+  saveFeedPosition(db, videoId).catch((cause: unknown) => {
+    console.warn(`[feed] saving the page failed: ${String(cause)}`);
+  });
 }
 
 function nextState(previous: FeedState, read: Read): FeedState {
@@ -67,6 +75,9 @@ export function useFeed() {
   const [state, setState] = useState<FeedState>({ kind: 'loading' });
   // The latest state, for skips, which read the list outside of rendering.
   const latest = useRef<FeedState>(state);
+  // The video on screen as last saved (null: the end page), so a skip of
+  // that video saves the one that takes its place.
+  const shownId = useRef<string | null | undefined>(undefined);
 
   const show = useCallback((read: Read) => {
     const next = nextState(latest.current, read);
@@ -114,6 +125,7 @@ export function useFeed() {
   /** Reads the list again, e.g. after a Refresh saved a new one. */
   const reload = useCallback(async () => {
     resetWatch();
+    shownId.current = undefined;
     show(await readFeed(db));
   }, [db, show, resetWatch]);
 
@@ -144,6 +156,13 @@ export function useFeed() {
       latest.current = next;
       setState(next);
       console.log(formatSkipLine(plan, error));
+      // The page on screen now shows the next video in the skipped one's place.
+      if (shownId.current === videoId) {
+        const index = current.videos.findIndex((item) => item.videoId === videoId);
+        const { videoId: nowShown } = positionOfPage(next.videos, index);
+        shownId.current = nowShown;
+        savePosition(db, nowShown);
+      }
 
       try {
         const saved = await skipFeedItem(db, videoId, plan.replacement?.videoId ?? null);
@@ -155,5 +174,18 @@ export function useFeed() {
     [db],
   );
 
-  return { state, reload, onPlayerError, onPlaybackChange };
+  /** Call when the feed settles on a page, so the app reopens on it. */
+  const onPageShown = useCallback(
+    (index: number) => {
+      const current = latest.current;
+      if (current.kind !== 'ready') return;
+      const { videoId } = positionOfPage(current.videos, index);
+      if (videoId === shownId.current) return;
+      shownId.current = videoId;
+      savePosition(db, videoId);
+    },
+    [db],
+  );
+
+  return { state, reload, onPlayerError, onPlaybackChange, onPageShown };
 }

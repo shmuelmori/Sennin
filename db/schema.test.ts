@@ -39,11 +39,11 @@ async function makeV2Database(): Promise<void> {
 }
 
 describe('initDatabase', () => {
-  it('creates the five tables from spec §7 and seeds the items', async () => {
+  it('creates the six tables from spec §7 and seeds the items', async () => {
     await initDatabase(db);
     expect(await readDatabaseSummary(db)).toEqual({
       schemaVersion: SCHEMA_VERSION,
-      tables: ['feed_item', 'fetch_log', 'item', 'quota_day', 'watched'],
+      tables: ['feed_item', 'feed_position', 'fetch_log', 'item', 'quota_day', 'watched'],
       itemCount: SEED_ITEMS.length,
     });
   });
@@ -71,12 +71,33 @@ describe('initDatabase', () => {
     await makeV2Database();
     await initDatabase(db);
     const summary = await readDatabaseSummary(db);
-    expect(summary.schemaVersion).toBe(3);
-    expect(summary.tables).toEqual(['feed_item', 'fetch_log', 'item', 'quota_day', 'watched']);
+    expect(summary.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(summary.tables).toEqual([
+      'feed_item',
+      'feed_position',
+      'fetch_log',
+      'item',
+      'quota_day',
+      'watched',
+    ]);
     expect(summary.itemCount).toBe(SEED_ITEMS.length);
     expect(await db.getAllAsync('SELECT videoId FROM watched')).toEqual([{ videoId: 'seen' }]);
     expect(await db.getAllAsync('SELECT videoId FROM feed_item')).toEqual([]);
     expect(await db.getAllAsync('SELECT id FROM fetch_log')).toEqual([]);
+  });
+
+  it('upgrades a v3 database: adds feed_position and keeps the list', async () => {
+    await initDatabase(db);
+    await db.execAsync('DROP TABLE feed_position; PRAGMA user_version = 3;');
+    await db.runAsync(
+      `INSERT INTO feed_item
+         (position, videoId, itemId, itemName, title, durationSec, isReserve, status)
+       VALUES (0, 'a', 1, 'Octopus', 'Title', 60, 0, 'unseen')`,
+    );
+    await initDatabase(db);
+    expect((await readDatabaseSummary(db)).schemaVersion).toBe(4);
+    expect(await db.getAllAsync('SELECT videoId FROM feed_item')).toEqual([{ videoId: 'a' }]);
+    expect(await db.getAllAsync('SELECT * FROM feed_position')).toEqual([]);
   });
 
   it('refuses a database from a newer app version', async () => {

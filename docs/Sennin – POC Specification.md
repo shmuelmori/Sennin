@@ -64,6 +64,7 @@ Questions the POC answers:
 - A video loops when it ends, like in the Shorts app.
 - No "4 of 100" counter.
 - No Refresh button on the Feed: Refresh is its own tab (decided 2026-11-07). A list saved there opens at its first video the next time the Feed is shown. Opening the app shows the saved list without fetching.
+- Leaving the app and coming back opens the Feed on the video it was on (or the end page), saved in `feed_position` each time the feed settles on a page. Without a saved page, or if that video was skipped, it opens on the first unwatched video. Decided on 2026-11-09.
 - No list yet: empty screen with an "Open Refresh" button that switches to the Refresh tab. End of list: "That's it for today".
 - Pause, counter and loop decided on 2026-11-06.
 
@@ -180,6 +181,7 @@ When a fetch fails:
 | watched | videoId (primary key), watchedAt |
 | fetch\_log | startedAt, durationMs, itemsPicked, fetched, passed, rejectedByRule, quotaUsed, error |
 | quota\_day | date, unitsUsed |
+| feed\_position | id (always 1), videoId |
 
 - The `topic`, `channel` and `channel_topic` tables are dropped. The migration (schema v3) drops them and keeps `watched`. It also rebuilds `feed_item` and `fetch_log`, so the current list and old fetch logs are gone after the upgrade (2026-11-08).
 - `feed_item.itemId` and `itemName` replace `channelId` and `channelTitle`. The name is saved with each video, so the strip still shows it after the item is deleted.
@@ -189,6 +191,7 @@ When a fetch fails:
 - `fetch_log.rejectedByRule` is a JSON list with one `{videoId, rule, detail}` per rejected video (F5). The Status screen counts them per rule. Fetch logs older than 30 days are deleted when a new fetch is saved. Decided on 2026-11-06.
 - `fetch_log.fetched` is the number of videos `videos.list` returned, which the filters then checked; `passed` is how many passed all rules. `fetch_log.error` names the failure and any skipped items, or is empty.
 - `fetch_log.durationMs` is how long the fetch took, until the new list was saved. Replaces `finishedAt` (2026-11-08).
+- `feed_position` holds at most one row: the video the Feed was last on, or NULL for the end page. Saving a new list clears it. Added in schema v4 (2026-11-09).
 - `quota_day.date` is the Pacific Time date (`YYYY-MM-DD`); `unitsUsed` is the units spent that day.
 - Times are stored as milliseconds since 1970, and true/false as 1/0.
 

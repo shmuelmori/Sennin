@@ -19,7 +19,8 @@ import { colors, sizes, spacing } from '@/theme';
 type Position = { version: number; index: number };
 
 // Feed screen (spec §4, steps 7.1 to 7.5): the saved list from feed_item as
-// a vertical paging feed, opening on the first unwatched video. A video that
+// a vertical paging feed, opening on the page it was last on (or the first
+// unwatched video). A video that
 // can't play is replaced from the reserve (F8), and one that has played for
 // half its length is saved as watched (F9). The strip's remove button takes
 // the video's item out of later fetches, with "Undo" for 5 seconds (F3). A
@@ -31,7 +32,7 @@ export default function FeedScreen() {
   const [pageSize, setPageSize] = useState<Size | null>(null);
   const [position, setPosition] = useState<Position | null>(null);
   const switchTimer = useSwitchTimer();
-  const { state, onPlayerError, onPlaybackChange } = useFeed();
+  const { state, onPlayerError, onPlaybackChange, onPageShown } = useFeed();
   const { removedIds, undo, removeItem, undoRemove } = useItemRemoval();
   // Stable, so the memoized pages don't all re-render on every swipe.
   const onRemoveItem = useCallback((item: FeedItem) => void removeItem(item), [removeItem]);
@@ -91,6 +92,7 @@ export default function FeedScreen() {
       const page = pages[index];
       if (page?.kind === 'video') switchTimer.onSwitch(page.item.videoId);
       setPosition({ version: state.version, index });
+      onPageShown(index);
     };
     body = (
       <FeedPager
