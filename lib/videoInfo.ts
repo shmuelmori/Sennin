@@ -14,9 +14,15 @@ export type VideoContext = {
 /** Long descriptions are mostly links and hashtags; this much is plenty. */
 export const MAX_DESCRIPTION_CHARS = 1_000;
 
+/** The instruction when the google_search tool is on. */
 export const INSTRUCTION =
   'הסבר בעברית, 150–250 מילים, על הנושא של הסרטון. השתמש רק בעובדות שמצאת בחיפוש. ' +
   'אם אין מידע מספיק, אמור זאת ואל תנחש. אל תציג רשימת מקורות.';
+
+/** The instruction without search: the video's details and the model's own knowledge. */
+export const INSTRUCTION_NO_SEARCH =
+  'הסבר בעברית, 150–250 מילים, על הנושא של הסרטון, על סמך פרטי הסרטון והידע שלך. ' +
+  'כתוב רק עובדות שאתה בטוח בהן. אם אין מידע מספיק, אמור זאת ואל תנחש. אל תציג רשימת מקורות.';
 
 /**
  * The video's details are mostly English and the search results too, which
@@ -39,13 +45,14 @@ export function trimDescription(description: string): string {
 }
 
 /**
- * The prompt: the instruction, the video's topic, title, channel and
- * description under Hebrew labels, and the language rule again at the end.
+ * The prompt: the instruction (with or without search), the video's topic,
+ * title, channel and description under Hebrew labels, and the language rule
+ * again at the end.
  */
-export function buildPrompt(video: VideoContext): string {
+export function buildPrompt(video: VideoContext, googleSearch: boolean): string {
   const description = trimDescription(video.description);
   return [
-    INSTRUCTION,
+    googleSearch ? INSTRUCTION : INSTRUCTION_NO_SEARCH,
     '',
     'פרטי הסרטון:',
     `נושא: ${video.itemName}`,
@@ -60,16 +67,19 @@ export function buildPrompt(video: VideoContext): string {
 export type GeminiRequestBody = {
   systemInstruction: { parts: { text: string }[] };
   contents: { role: 'user'; parts: { text: string }[] }[];
-  tools: { google_search: Record<string, never> }[];
+  tools?: { google_search: Record<string, never> }[];
 };
 
-/** generateContent's body, with the google_search tool on, so the answer is grounded. */
-export function buildRequestBody(video: VideoContext): GeminiRequestBody {
-  return {
+/**
+ * generateContent's body. With googleSearch the google_search tool is on, so
+ * the answer is grounded; without it the body has no tools.
+ */
+export function buildRequestBody(video: VideoContext, googleSearch: boolean): GeminiRequestBody {
+  const body: GeminiRequestBody = {
     systemInstruction: { parts: [{ text: LANGUAGE_RULE }] },
-    contents: [{ role: 'user', parts: [{ text: buildPrompt(video) }] }],
-    tools: [{ google_search: {} }],
+    contents: [{ role: 'user', parts: [{ text: buildPrompt(video, googleSearch) }] }],
   };
+  return googleSearch ? { ...body, tools: [{ google_search: {} }] } : body;
 }
 
 /** The parts of a generateContent response the app reads. */

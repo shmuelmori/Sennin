@@ -49,7 +49,7 @@ Questions the POC answers:
 | Network | fetch against YouTube Data API v3 |
 | Storage | expo-sqlite |
 | API key | .env file (EXPO\_PUBLIC\_YOUTUBE\_KEY), restricted to YouTube Data API only |
-| Video info | Gemini API (`generateContent` with the `google_search` tool), key in .env (EXPO\_PUBLIC\_GEMINI\_KEY). The model name is set once, in `config/gemini.ts` (`gemini-2.5-flash`). Added 2026-11-10 |
+| Video info | Gemini API (`generateContent`, Google Search off; see §5a), key in .env (EXPO\_PUBLIC\_GEMINI\_KEY). The model name and the search switch are set once, in `config/gemini.ts` (`gemini-3.5-flash`). Added 2026-11-10 |
 | Bottom sheet | @gorhom/bottom-sheet (with react-native-reanimated and react-native-gesture-handler, all in Expo Go) |
 
 ## 4. Screens
@@ -156,7 +156,7 @@ When a fetch fails:
 
 - A key error or `quotaExceeded` stops the fetch, keeps the current list and logs the error.
 - Any other error on one item's search skips that item, and the fetch goes on with the rest. If every item fails, the fetch fails.
-- An info button (ⓘ) in the strip, next to the remove button (2026-11-10). Tapping it pauses the video and opens a bottom sheet: a loading state, then a short Hebrew explanation of the video's topic, written by Gemini from a Google Search. Closing the sheet doesn't resume the video; tapping the video (or swiping to another) does. See §5a.
+- An info button (ⓘ) in the strip, next to the remove button (2026-11-10). Tapping it pauses the video and opens a bottom sheet: a loading state, then a short Hebrew explanation of the video's topic, written by Gemini from the video's details and its own knowledge (Google Search is off, §5a). Closing the sheet doesn't resume the video; tapping the video (or swiping to another) does. See §5a.
 - A failed fetch, or one where no video passes the filters, keeps the current list and says so.
 
 ## 5a. Video info (Gemini)
@@ -165,7 +165,8 @@ Added 2026-11-10.
 
 - Gemini is called only when the user taps ⓘ, never while scrolling or fetching.
 - Before any request, `video_info` is checked. A saved answer is shown at once, without a request. Tapping ⓘ again on the same video never sends a second request, also while the first one is still running.
-- The request sends the video's title, description (cut to 1,000 characters), item name and channel name, with the `google_search` tool on. The instruction: "הסבר בעברית, 150–250 מילים, על הנושא של הסרטון. השתמש רק בעובדות שמצאת בחיפוש. אם אין מידע מספיק, אמור זאת ואל תנחש. אל תציג רשימת מקורות."
+- The request sends the video's title, description (cut to 1,000 characters), item name and channel name. The instruction: "הסבר בעברית, 150–250 מילים, על הנושא של הסרטון, על סמך פרטי הסרטון והידע שלך. כתוב רק עובדות שאתה בטוח בהן. אם אין מידע מספיק, אמור זאת ואל תנחש. אל תציג רשימת מקורות."
+- Google Search is off (changed 2026-11-10). With the `google_search` tool, every request on the free tier got HTTP 429 at once, on every model tried (gemini-3.5-flash, gemini-3.8-flash, gemini-flash-latest); without it, gemini-3.5-flash answers. gemini-2.5-flash is closed to new users. Answers are therefore not grounded, and a niche or recent topic is more likely to get a wrong fact. The switch is `GEMINI_GOOGLE_SEARCH` in `config/gemini.ts`; with it on, the tool is sent and the instruction becomes "…השתמש רק בעובדות שמצאת בחיפוש…". That needs billing on the project, which goes against "no cost".
 - The content is Hebrew (2026-11-10): the video details are sent under Hebrew labels, and a rule "write the whole answer in Hebrew only, even when the video details and search results are in English" is set as the system instruction and repeated at the end of the prompt. An answer where under 60% of the letters are Hebrew is shown but not saved, and a saved one like that is asked again.
 - A successful answer is saved in `video_info` with the model's name. Errors and empty answers are not saved, so the next tap tries again.
 - Messages: no network or a timeout (20 s) → "אין חיבור"; HTTP 429 → "נגמרה המכסה להיום"; a response with no text → "לא נמצא מידע על הנושא". A missing key and other errors get their own short message.
@@ -188,7 +189,7 @@ Added 2026-11-10.
 | F10 | Preload the next video: the neighbors' players are already loaded with their videos (cued, not playing), and the next video starts as soon as the page snap begins after the finger lifts, not when it ends. No hidden or muted playback, to stay within YouTube's policies. Decided on 2026-11-06 | Nice to have |
 | F11 | Status screen | Nice to have |
 | F12 | Daily quota counter; Refresh disabled below 2,100 units left | Must |
-| F13 | Video info sheet (ⓘ): a grounded Gemini explanation of the video's topic, cached in `video_info` (§5a). Added 2026-11-10 | Nice to have |
+| F13 | Video info sheet (ⓘ): a Gemini explanation of the video's topic, cached in `video_info` (§5a). Added 2026-11-10 | Nice to have |
 
 ## 7. Data model (SQLite)
 
@@ -231,7 +232,7 @@ Added 2026-11-10.
 - Feed (2026-11-06): no tap-to-pause (YouTube's controls do it), no counter, videos loop, and auto-skip only on a player error.
 - Topic-based feed (2026-11-08): channels and the 2 fixed topics (World War II, Claude Code) are replaced by a dynamic item list and `search.list`. The quota budget rises from under 100 to about 2,010 units per fetch.
 - Blocked words are listed in `lib/topics.ts` (agreed 2026-11-06). Matching ignores case and uses whole words. Blocked words use narrow phrases such as "reacts to" instead of plain "reaction", so titles like "chain reaction" aren't blocked.
-- Video info (2026-11-10): an on-demand, grounded Gemini explanation per video, the one exception to "only YouTube" network calls. The sheet covers the paused player while it is open; the player's controls stay untouched and it resumes on tap.
+- Video info (2026-11-10): an on-demand Gemini explanation per video (not grounded: Google Search is off on the free tier), the one exception to "only YouTube" network calls. The sheet covers the paused player while it is open; the player's controls stay untouched and it resumes on tap.
 - React Native with Expo.
 
 ## 10. Risks

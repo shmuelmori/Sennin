@@ -2,7 +2,7 @@
 // per tap on ⓘ, when the answer isn't saved yet (hooks/useVideoInfo.ts). The
 // prompt and the response reading are pure functions in lib/videoInfo.ts.
 
-import { GEMINI_MODEL, GEMINI_TIMEOUT_MS } from '@/config/gemini';
+import { GEMINI_GOOGLE_SEARCH, GEMINI_MODEL, GEMINI_TIMEOUT_MS } from '@/config/gemini';
 import { checkGeminiKey, type ApiKeyCheck } from '@/lib/apiKey';
 import {
   buildRequestBody,
@@ -36,7 +36,7 @@ function errorMessage(body: unknown, status: number): string {
   return typeof message === 'string' ? message : `HTTP ${status}`;
 }
 
-/** Asks Gemini, with Google Search on, to explain the video's topic. */
+/** Asks Gemini to explain the video's topic, with Google Search if GEMINI_GOOGLE_SEARCH is on. */
 export async function explainVideo(video: VideoContext): Promise<GeminiResult> {
   const key = readGeminiKey();
   if (!key.ok) {
@@ -49,7 +49,7 @@ export async function explainVideo(video: VideoContext): Promise<GeminiResult> {
     const response = await fetch(`${API_BASE}/${GEMINI_MODEL}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key.key },
-      body: JSON.stringify(buildRequestBody(video)),
+      body: JSON.stringify(buildRequestBody(video, GEMINI_GOOGLE_SEARCH)),
       signal: controller.signal,
     });
     const body = parseJson(await response.text());

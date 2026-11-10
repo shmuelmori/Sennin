@@ -5,6 +5,7 @@ import {
   describeFailure,
   formatAnswerLine,
   INSTRUCTION,
+  INSTRUCTION_NO_SEARCH,
   isMostlyHebrew,
   LANGUAGE_RULE,
   MAX_DESCRIPTION_CHARS,
@@ -34,7 +35,7 @@ describe('trimDescription', () => {
 
 describe('buildPrompt', () => {
   it('starts with the instruction and holds the title, description, topic and channel', () => {
-    const prompt = buildPrompt(VIDEO);
+    const prompt = buildPrompt(VIDEO, true);
     expect(prompt.startsWith(INSTRUCTION)).toBe(true);
     expect(prompt).toContain('נושא: Octopus');
     expect(prompt).toContain('כותרת: How octopuses change color');
@@ -42,13 +43,20 @@ describe('buildPrompt', () => {
     expect(prompt).toContain('תיאור: Chromatophores explained.');
   });
 
-  it('ends with the Hebrew-only rule', () => {
-    expect(buildPrompt(VIDEO).endsWith(LANGUAGE_RULE)).toBe(true);
+  it('starts with the no-search instruction when search is off', () => {
+    const prompt = buildPrompt(VIDEO, false);
+    expect(prompt.startsWith(INSTRUCTION_NO_SEARCH)).toBe(true);
+    expect(prompt).not.toContain('בחיפוש');
+    expect(prompt).toContain('נושא: Octopus');
+  });
+
+  it.each([true, false])('ends with the Hebrew-only rule (search %p)', (googleSearch) => {
+    expect(buildPrompt(VIDEO, googleSearch).endsWith(LANGUAGE_RULE)).toBe(true);
     expect(LANGUAGE_RULE).toContain('בעברית בלבד');
   });
 
   it('marks a missing description and channel', () => {
-    const prompt = buildPrompt({ ...VIDEO, description: ' ', channelTitle: '' });
+    const prompt = buildPrompt({ ...VIDEO, description: ' ', channelTitle: '' }, false);
     expect(prompt).toContain('תיאור: (אין)');
     expect(prompt).toContain('ערוץ: (לא ידוע)');
   });
@@ -59,14 +67,33 @@ describe('buildPrompt', () => {
     expect(INSTRUCTION).toContain('רק בעובדות שמצאת בחיפוש');
     expect(INSTRUCTION).toContain('אל תציג רשימת מקורות');
   });
+
+  it('without search, asks for Hebrew, 150–250 words, sure facts only and no source list', () => {
+    expect(INSTRUCTION_NO_SEARCH).toContain('בעברית');
+    expect(INSTRUCTION_NO_SEARCH).toContain('150–250 מילים');
+    expect(INSTRUCTION_NO_SEARCH).toContain('רק עובדות שאתה בטוח בהן');
+    expect(INSTRUCTION_NO_SEARCH).toContain('אל תנחש');
+    expect(INSTRUCTION_NO_SEARCH).toContain('אל תציג רשימת מקורות');
+  });
 });
 
 describe('buildRequestBody', () => {
-  it('sends one user message with the google_search tool', () => {
-    const body = buildRequestBody(VIDEO);
+  it('sends one user message with the google_search tool when search is on', () => {
+    const body = buildRequestBody(VIDEO, true);
     expect(body.systemInstruction).toEqual({ parts: [{ text: LANGUAGE_RULE }] });
     expect(body.tools).toEqual([{ google_search: {} }]);
-    expect(body.contents).toEqual([{ role: 'user', parts: [{ text: buildPrompt(VIDEO) }] }]);
+    expect(body.contents).toEqual([
+      { role: 'user', parts: [{ text: buildPrompt(VIDEO, true) }] },
+    ]);
+  });
+
+  it('sends no tools when search is off', () => {
+    const body = buildRequestBody(VIDEO, false);
+    expect(body).not.toHaveProperty('tools');
+    expect(body.systemInstruction).toEqual({ parts: [{ text: LANGUAGE_RULE }] });
+    expect(body.contents).toEqual([
+      { role: 'user', parts: [{ text: buildPrompt(VIDEO, false) }] },
+    ]);
   });
 });
 

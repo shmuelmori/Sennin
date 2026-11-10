@@ -31,8 +31,8 @@ Build progress is tracked in `docs/status.md`. Check it at the start of a sessio
 
 ## Gemini API (info sheet, spec §5a)
 - Call Gemini only when the user taps ⓘ, never while scrolling or fetching. Check `video_info` first and show a saved answer without a request; never send two requests for the same video.
-- The model name lives only in `config/gemini.ts`. `services/gemini.ts` is the only file that calls Gemini.
-- Send the request with the `google_search` tool, and count each request in `quota_day.geminiRequests`.
+- The model name and the Google Search switch live only in `config/gemini.ts`. `services/gemini.ts` is the only file that calls Gemini.
+- Google Search (the `google_search` tool) is off: the free tier returns HTTP 429 for every grounded request. Turn it on in `config/gemini.ts` only if billing is enabled. Count each request in `quota_day.geminiRequests`.
 
 ## Code conventions
 
